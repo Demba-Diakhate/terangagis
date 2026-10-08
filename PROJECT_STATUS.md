@@ -6,11 +6,11 @@
 
 | Champ | Valeur |
 |---|---|
-| **Sprint courant** | S00 — Préparation |
-| **Statut du sprint** | EN COURS |
-| **Tâche en cours** | S00-T5 : squelette du plugin QGIS |
-| **Prochaine action** | Installer QGIS 3.44 LTR, puis créer le squelette du plugin |
-| **Bloqueurs** | QGIS non installé sur la machine de développement |
+| **Sprint courant** | S01 — Contrôle QGIS |
+| **Statut du sprint** | À FAIRE |
+| **Tâche en cours** | — |
+| **Prochaine action** | Démarrer Sprint 1 (S01-T1 : bridge HTTP) |
+| **Bloqueurs** | aucun |
 | **Sprints terminés** | aucun |
 
 ---
@@ -19,8 +19,8 @@
 
 | Sprint | Intitulé | Statut | DoD vérifiée le | Notes |
 |---|---|---|---|---|
-| S00 | Préparation | **EN COURS** | — | CDC V2 + suivi agile faits ; git/plugin/tests à faire |
-| S01 | Contrôle QGIS (bridge HTTP + inspection) | À FAIRE | — | — |
+| S00 | Préparation | **FAIT** | 2026-10-08 | CDC V2 + suivi agile faits ; git/plugin/tests à faire |
+| S01 | Contrôle QGIS (bridge HTTP + inspection) | **EN COURS** | — | — |
 | S02 | Outils SIG (16 outils, Processing-first) | À FAIRE | — | — |
 | S03 | Serveur MCP | À FAIRE | — | — |
 | S04 | Agent langage naturel | À FAIRE | — | LLM : OpenRouter + Gemini free tier |
