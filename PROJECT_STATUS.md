@@ -6,12 +6,12 @@
 
 | Champ | Valeur |
 |---|---|
-| **Sprint courant** | S06 — Interface QGIS (panneau chat) |
+| **Sprint courant** | S07 — Sécurité et traçabilité |
 | **Statut du sprint** | À FAIRE |
 | **Tâche en cours** | — |
-| **Prochaine action** | Démarrer S06 (panneau chat PyQt, appel agent + orchestrateur, validation utilisateur) |
-| **Bloqueurs** | Tests LLM live nécessitent une clé API (H1) |
-| **Sprints terminés** | S00, S01, S02, S03, S04, S05 |
+| **Prochaine action** | Démarrer S07 (journalisation, sanitisation RT7, robustesse erreurs) |
+| **Bloqueurs** | Tests LLM live non exécutés (clé API absente — H1) |
+| **Sprints terminés** | S00, S01, S02, S03, S04, S05, S06 |
 
 ---
 
@@ -25,7 +25,7 @@
 | S03 | Serveur MCP | **FAIT** | 2026-10-08 | MCP stdio + 16 tools + client bridge + correctif marshalling |
 | S04 | Agent langage naturel | **FAIT** | 2026-10-08 | LLM OpenAI-compatible + tool calling + planification |
 | S05 | Planification multi-étapes | **FAIT** | 2026-10-08 | Dry-run RT3 + orchestrateur + journal SQLite RT4 |
-| S06 | Interface QGIS (panneau chat) | À FAIRE | — | — |
+| S06 | Interface QGIS (panneau chat) | **FAIT** | 2026-10-08 | ChatPanel + QThread + confirmation |
 | S07 | Sécurité et traçabilité | À FAIRE | — | — |
 | S08 | Workflows métier (3 démos) | À FAIRE | — | — |
 | S09 | Tests et qualité (corpus golden, CI) | À FAIRE | — | — |
@@ -35,17 +35,28 @@ Légende : `À FAIRE` | `EN COURS` | `FAIT` | `BLOQUÉ`
 
 ---
 
-## Détail du sprint courant — S06 Interface QGIS (panneau chat)
+## Détail du sprint courant — S07 Sécurité et traçabilité
 
-**Objectif :** panneau de discussion dans QGIS relié à l'agent et à l'orchestrateur.
-**DoD :** saisie d'instruction, affichage du plan et des résultats, confirmation des opérations risquées, en français.
+**Objectif :** durcir la sécurité (jeton, sanitisation) et compléter la traçabilité.
+**DoD :** sanitisation des données envoyées au LLM (RT7), journalisation exposée, gestion d'erreurs homogène, tests.
 
 | ID | Tâche | Statut | Notes |
 |---|---|---|---|
-| S06-T1 | Panneau chat (widget Qt) dans le dock | À FAIRE | `plugin/ui/` |
-| S06-T2 | Branchement agent + orchestrateur (thread) | À FAIRE | ne pas bloquer l'UI |
-| S06-T3 | Dialogue de confirmation des opérations risquées | À FAIRE | RT sécurités |
-| S06-T4 | Tests/smoke UI | À FAIRE | — |
+| S07-T1 | Sanitisation des attributs/aperçus envoyés au LLM (RT7) | À FAIRE | — |
+| S07-T2 | Exposition du journal (consultation) | À FAIRE | RT4 |
+| S07-T3 | Gestion d'erreurs homogène (bridge/agent/UI) | À FAIRE | — |
+| S07-T4 | Tests sécurité/traçabilité | À FAIRE | — |
+
+### Sprint terminé — S06 Interface QGIS (panneau chat)
+
+**DoD :** saisie d'instruction, affichage du plan/résultats, confirmation des opérations risquées, en français.
+
+| ID | Tâche | Statut | Notes |
+|---|---|---|---|
+| S06-T1 | Panneau chat (widget Qt) dans le dock | FAIT | `plugin/ui/chat_panel.py` |
+| S06-T2 | Branchement agent + orchestrateur (QThread) | FAIT | UI non bloquée (R6) |
+| S06-T3 | Confirmation des opérations risquées | FAIT | `plugin/agent/policy.py` + QMessageBox |
+| S06-T4 | Tests (format/policy + smokes UI) | FAIT | `test_policy`, `test_formatting`, `chat_panel_smoke`, `plugin_smoke` |
 
 ### Sprint terminé — S05 Planification multi-étapes
 
@@ -123,3 +134,4 @@ Légende : `À FAIRE` | `EN COURS` | `FAIT` | `BLOQUÉ`
 | 2026-10-08 | S04 terminé : abstraction LLM OpenAI-compatible (OpenRouter/Gemini), tool calling (16 outils), planification agent, tests (26 pytest) | `plugin/agent/llm.py`, `plugin/agent/prompts.py`, `plugin/agent/tools_schema.py`, `plugin/agent/agent.py`, `tests/test_agent_llm.py` |
 | 2026-10-08 | S05 terminé : validation/dry-run (RT3), orchestrateur séquentiel, journal SQLite (RT4), tests (35 pytest) ; S06 à démarrer | `plugin/agent/validation.py`, `plugin/agent/orchestrator.py`, `plugin/agent/journal.py`, `tests/test_orchestrator.py` |
 | 2026-10-08 | Durcissement : balayage des 16 outils (QGIS), test e2e agent→orchestrateur→bridge, branchement du bridge dans le plugin ; correctifs marshalling (signal/slot Qt), `qgis:distancematrix`, sorties inscriptibles, journal thread-safe | `plugin/bridge/bridge.py`, `plugin/geofunc/*`, `plugin/agent/journal.py`, `plugin/terangagis_plugin.py`, `tests/tools_smoke.py`, `tests/e2e_agent_smoke.py`, `tests/plugin_smoke.py` |
+| 2026-10-08 | S06 terminé : interface de dialogue (ChatPanel + QThread + confirmation), formatage FR, politique de confirmation ; tests (44 pytest + smokes UI) | `plugin/ui/chat_panel.py`, `plugin/ui/formatting.py`, `plugin/agent/policy.py`, `plugin/terangagis_plugin.py`, `tests/*` |
