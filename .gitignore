@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Secrets / configuration locale
+.env
+
+# Tests / outillage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Packaging QGIS
+*.zip
+*.qrc
+
+# OS
+Thumbs.db
+.DS_Store

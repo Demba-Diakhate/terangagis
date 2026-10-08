@@ -1,0 +1,15 @@
+[general]
+name=TerangaGIS
+qgisMinimumVersion=3.40
+qgisMaximumVersion=3.99
+description=Agent GeoAI : réalise des tâches SIG dans QGIS à partir d'instructions en langage naturel
+about=TerangaGIS interprète une demande en langage naturel, inspecte le projet QGIS, propose un plan, demande validation et exécute les traitements SIG (PyQGIS / Processing) avec journalisation.
+version=0.0.1
+author=Projet TerangaGIS
+email=
+hasProcessingProvider=no
+experimental=True
+deprecated=False
+tags=ai,agent,geoai,llm,chat,geomatic
+category=Plugins
+icon=icon.png
