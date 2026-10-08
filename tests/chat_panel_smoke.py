@@ -10,7 +10,7 @@ from plugin.agent.agent import AgentPlan, AgentStep
 
 
 class _StubAgent:
-    def plan(self, instruction):
+    def plan(self, instruction, context=''):
         return AgentPlan(
             steps=[AgentStep(tool='get_project_info', params={})],
             assistant_text='Je liste les informations du projet.',

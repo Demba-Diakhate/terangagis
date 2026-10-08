@@ -10,6 +10,7 @@ from typing import Any, Dict, List
 
 from .llm import LLMClient, LLMError
 from .prompts import SYSTEM_PROMPT
+from .sanitization import sanitize_text
 from .tools_schema import TOOL_NAMES, openai_tools
 
 
@@ -38,6 +39,9 @@ class GeoAgent:
         """Produit un plan (liste d'étapes) sans exécuter les outils."""
         if not user_query or not user_query.strip():
             raise AgentError('Instruction vide.')
+
+        user_query = sanitize_text(user_query, max_length=2000)
+        context = sanitize_text(context, max_length=4000) if context else ''
 
         messages: List[Dict[str, Any]] = [{'role': 'system', 'content': SYSTEM_PROMPT}]
         if context:

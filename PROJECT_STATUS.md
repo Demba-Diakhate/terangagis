@@ -6,12 +6,12 @@
 
 | Champ | Valeur |
 |---|---|
-| **Sprint courant** | S07 — Sécurité et traçabilité |
+| **Sprint courant** | S08 — Workflows métier (3 démos) |
 | **Statut du sprint** | À FAIRE |
 | **Tâche en cours** | — |
-| **Prochaine action** | Démarrer S07 (journalisation, sanitisation RT7, robustesse erreurs) |
+| **Prochaine action** | Démarrer S08 (3 workflows métier démontrables) |
 | **Bloqueurs** | Tests LLM live non exécutés (clé API absente — H1) |
-| **Sprints terminés** | S00, S01, S02, S03, S04, S05, S06 |
+| **Sprints terminés** | S00, S01, S02, S03, S04, S05, S06, S07 |
 
 ---
 
@@ -26,7 +26,7 @@
 | S04 | Agent langage naturel | **FAIT** | 2026-10-08 | LLM OpenAI-compatible + tool calling + planification |
 | S05 | Planification multi-étapes | **FAIT** | 2026-10-08 | Dry-run RT3 + orchestrateur + journal SQLite RT4 |
 | S06 | Interface QGIS (panneau chat) | **FAIT** | 2026-10-08 | ChatPanel + QThread + confirmation |
-| S07 | Sécurité et traçabilité | À FAIRE | — | — |
+| S07 | Sécurité et traçabilité | **FAIT** | 2026-10-08 | Sanitisation RT7 + journal lecture/export |
 | S08 | Workflows métier (3 démos) | À FAIRE | — | — |
 | S09 | Tests et qualité (corpus golden, CI) | À FAIRE | — | — |
 | S10 | Release MVP | À FAIRE | — | — |
@@ -46,6 +46,17 @@ Légende : `À FAIRE` | `EN COURS` | `FAIT` | `BLOQUÉ`
 | S07-T2 | Exposition du journal (consultation) | À FAIRE | RT4 |
 | S07-T3 | Gestion d'erreurs homogène (bridge/agent/UI) | À FAIRE | — |
 | S07-T4 | Tests sécurité/traçabilité | À FAIRE | — |
+
+### Sprint terminé — S07 Sécurité et traçabilité
+
+**DoD :** sanitisation des données envoyées au LLM (RT7), journalisation exposée, gestion d'erreurs homogène, tests.
+
+| ID | Tâche | Statut | Notes |
+|---|---|---|---|
+| S07-T1 | Sanitisation des attributs/aperçus envoyés au LLM (RT7) | FAIT | `plugin/agent/sanitization.py` (troncature, contrôle, secrets) |
+| S07-T2 | Exposition du journal (consultation) | FAIT | `Journal.recent()` / `Journal.export()` (RT4) |
+| S07-T3 | Branchement sanitisation + journal dans l'agent/plugin | FAIT | `agent.py` sanitise contexte/instruction ; `terangagis_plugin.py` crée le `Journal`, expose le contexte projet |
+| S07-T4 | Tests sécurité/traçabilité | FAIT | `test_sanitization` (6), `test_journal_read` (3) |
 
 ### Sprint terminé — S06 Interface QGIS (panneau chat)
 
@@ -111,6 +122,7 @@ Légende : `À FAIRE` | `EN COURS` | `FAIT` | `BLOQUÉ`
 | 2026-10-08 | Marshalling bridge : signal/slot Qt (`QueuedConnection`) sur un `QObject` du thread principal (remplace `QTimer.singleShot` en thread worker) | `plugin/bridge/bridge.py` |
 | 2026-10-08 | `distance_analysis` = `qgis:distancematrix` (fournisseur QGIS ; non `native:` en 3.44), champs d'identité auto | RT1, `plugin/geofunc/tools_analyze.py` |
 | 2026-10-08 | L'agent/orchestrateur s'exécute hors thread principal ; le bridge service la boucle Qt du thread principal | R6, `tests/e2e_agent_smoke.py` |
+| 2026-10-08 | Sanitisation systématique (RT7) de l'instruction et du contexte projet avant envoi au LLM (troncature 200, motifs de secrets neutralisés) | RT7, `plugin/agent/sanitization.py` |
 
 ---
 
@@ -135,3 +147,4 @@ Légende : `À FAIRE` | `EN COURS` | `FAIT` | `BLOQUÉ`
 | 2026-10-08 | S05 terminé : validation/dry-run (RT3), orchestrateur séquentiel, journal SQLite (RT4), tests (35 pytest) ; S06 à démarrer | `plugin/agent/validation.py`, `plugin/agent/orchestrator.py`, `plugin/agent/journal.py`, `tests/test_orchestrator.py` |
 | 2026-10-08 | Durcissement : balayage des 16 outils (QGIS), test e2e agent→orchestrateur→bridge, branchement du bridge dans le plugin ; correctifs marshalling (signal/slot Qt), `qgis:distancematrix`, sorties inscriptibles, journal thread-safe | `plugin/bridge/bridge.py`, `plugin/geofunc/*`, `plugin/agent/journal.py`, `plugin/terangagis_plugin.py`, `tests/tools_smoke.py`, `tests/e2e_agent_smoke.py`, `tests/plugin_smoke.py` |
 | 2026-10-08 | S06 terminé : interface de dialogue (ChatPanel + QThread + confirmation), formatage FR, politique de confirmation ; tests (44 pytest + smokes UI) | `plugin/ui/chat_panel.py`, `plugin/ui/formatting.py`, `plugin/agent/policy.py`, `plugin/terangagis_plugin.py`, `tests/*` |
+| 2026-10-08 | S07 terminé : sanitisation RT7, journal lecture/export, branchement sanitisation + journal dans l'agent/plugin ; tests (53 pytest + smokes QGIS) ; S08 à démarrer | `plugin/agent/sanitization.py`, `plugin/agent/journal.py`, `plugin/agent/agent.py`, `plugin/terangagis_plugin.py`, `tests/test_sanitization.py`, `tests/test_journal_read.py` |

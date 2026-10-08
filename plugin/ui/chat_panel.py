@@ -19,14 +19,15 @@ class _PlanWorker(QThread):
     plan_ready = pyqtSignal(object)
     failed = pyqtSignal(str)
 
-    def __init__(self, agent, instruction: str) -> None:
+    def __init__(self, agent, instruction: str, context: str = '') -> None:
         super().__init__()
         self.agent = agent
         self.instruction = instruction
+        self.context = context
 
     def run(self) -> None:  # noqa: D401
         try:
-            plan = self.agent.plan(self.instruction)
+            plan = self.agent.plan(self.instruction, context=self.context)
         except Exception as e:  # noqa: BLE001
             self.failed.emit(str(e))
             return
@@ -102,7 +103,15 @@ class ChatPanel(QWidget):
         self._append(f"Vous : {instruction}")
         self.status.setText("Analyse de la demande…")
 
-        self._worker = _PlanWorker(self.agent, instruction)
+        context = ''
+        provider = getattr(self, 'context_provider', None)
+        if callable(provider):
+            try:
+                context = provider() or ''
+            except Exception:  # noqa: BLE001
+                context = ''
+
+        self._worker = _PlanWorker(self.agent, instruction, context)
         self._worker.plan_ready.connect(self._on_plan)
         self._worker.failed.connect(self._on_failed)
         self._worker.start()

@@ -55,5 +55,31 @@ class Journal:
             cur = self._conn.execute('SELECT COUNT(*) FROM events')
         return int(cur.fetchone()[0])
 
+    def recent(self, kind: str | None = None, limit: int = 50) -> list[dict[str, Any]]:
+        """Retourne les derniers événements (du plus récent au plus ancien)."""
+        if kind:
+            cur = self._conn.execute(
+                'SELECT id, ts, kind, payload FROM events WHERE kind = ? '
+                'ORDER BY id DESC LIMIT ?', (kind, limit),
+            )
+        else:
+            cur = self._conn.execute(
+                'SELECT id, ts, kind, payload FROM events ORDER BY id DESC LIMIT ?', (limit,),
+            )
+        events = []
+        for row in cur.fetchall():
+            events.append({
+                'id': row[0], 'ts': row[1], 'kind': row[2],
+                'payload': json.loads(row[3]),
+            })
+        return events
+
+    def export(self, path: str, kind: str | None = None) -> str:
+        """Exporte le journal (JSON) vers un fichier et retourne le chemin."""
+        events = self.recent(kind=kind, limit=10_000)
+        with open(path, 'w', encoding='utf-8') as fh:
+            json.dump(events, fh, ensure_ascii=False, indent=2)
+        return path
+
     def close(self) -> None:
         self._conn.close()

@@ -19,6 +19,7 @@ class TerangaGISPlugin:
         self.bridge_info_cache = None
         self.agent = None
         self.orchestrator = None
+        self.journal = None
         self.panel = None
 
     def initGui(self):
@@ -51,10 +52,12 @@ class TerangaGISPlugin:
         try:
             from mcp.bridge_client import BridgeClient
             from plugin.agent.agent import GeoAgent
+            from plugin.agent.journal import Journal
             from plugin.agent.orchestrator import Orchestrator
             client = BridgeClient(self.bridge.base_url, self.bridge.access_token)
-            self.agent = GeoAgent()
-            self.orchestrator = Orchestrator(client)
+            self.journal = Journal()
+            self.agent = GeoAgent(journal=self.journal)
+            self.orchestrator = Orchestrator(client, journal=self.journal)
             if self.panel is not None:
                 self.panel.agent = self.agent
                 self.panel.orchestrator = self.orchestrator
@@ -68,11 +71,20 @@ class TerangaGISPlugin:
         from plugin.ui.chat_panel import ChatPanel
         self.panel = ChatPanel(self.agent, self.orchestrator)
         self.panel._layer_crs_provider = self._layer_crs_map
+        self.panel.context_provider = self._project_context
 
         self.dock = QDockWidget(PLUGIN_NAME, self.iface.mainWindow())
         self.dock.setObjectName("TerangaGISPanel")
         self.dock.setWidget(self.panel)
         self.iface.addDockWidget(Qt.RightDockWidgetArea, self.dock)
+
+    def _project_context(self) -> str:
+        from plugin.agent.sanitization import sanitize_text
+        layers = self._layer_crs_map()
+        if not layers:
+            return 'Aucune couche chargée dans le projet.'
+        lines = [f'- {name} (CRS: {crs or "inconnu"})' for name, crs in list(layers.items())[:30]]
+        return sanitize_text('Couches du projet :\n' + '\n'.join(lines), max_length=4000)
 
     def _layer_crs_map(self):
         try:
@@ -122,3 +134,9 @@ class TerangaGISPlugin:
             self.dock.close()
             self.iface.mainWindow().removeDockWidget(self.dock)
             self.dock = None
+        if self.journal is not None:
+            try:
+                self.journal.close()
+            except Exception:  # noqa: BLE001
+                pass
+            self.journal = None
