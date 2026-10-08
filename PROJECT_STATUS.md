@@ -6,12 +6,12 @@
 
 | Champ | Valeur |
 |---|---|
-| **Sprint courant** | S01 — Contrôle QGIS |
-| **Statut du sprint** | À FAIRE |
-| **Tâche en cours** | — |
-| **Prochaine action** | Démarrer Sprint 1 (S01-T1 : bridge HTTP) |
+| **Sprint courant** | S03 — Serveur MCP |
+| **Statut du sprint** | EN COURS |
+| **Tâche en cours** | S03-T2 — MCP stdio + bridge client (squelette) |
+| **Prochaine action** | Implémenter les outils MCP (exposition des 16 outils SIG) |
 | **Bloqueurs** | aucun |
-| **Sprints terminés** | aucun |
+| **Sprints terminés** | S00, S01, S02 |
 
 ---
 
@@ -22,7 +22,7 @@
 | S00 | Préparation | **FAIT** | 2026-10-08 | CDC V2 + suivi agile faits ; git/plugin/tests à faire |
 | S01 | Contrôle QGIS (bridge HTTP + inspection) | **FAIT** | 2026-10-08 | — |
 | S02 | Outils SIG (16 outils, Processing-first) | **FAIT** | 2026-10-08 | — |
-| S03 | Serveur MCP | À FAIRE | — | — |
+| S03 | Serveur MCP | **EN COURS** | — | Squelette agent + MCP stdio + bridge client |
 | S04 | Agent langage naturel | À FAIRE | — | LLM : OpenRouter + Gemini free tier |
 | S05 | Planification multi-étapes | À FAIRE | — | — |
 | S06 | Interface QGIS (panneau chat) | À FAIRE | — | — |
@@ -35,21 +35,23 @@ Légende : `À FAIRE` | `EN COURS` | `FAIT` | `BLOQUÉ`
 
 ---
 
-## Détail du sprint courant — S00 Préparation
+## Détail du sprint courant — S03 Serveur MCP
 
-**Objectif :** environnement et architecture.
-**DoD :** dépôt fonctionnel ; QGIS local ; plugin minimal chargé ; premier test Python vert ; README initial ; suivi agile en place.
+**Objectif :** exposer les capacités QGIS à l'agent via MCP (stdio) + client du bridge HTTP.
+**DoD :** serveur MCP stdio fonctionnel ; bridge client (auth) ; outils MCP pour inspection + exécution ; tests.
 
 | ID | Tâche | Statut | Notes |
 |---|---|---|---|
-| S00-T1 | Cahier des charges combiné V2.0 | FAIT | `../TerangaGIS_Cahier_des_charges_Combine_V2.md` |
-| S00-T2 | Système de suivi agile (`AGENTS.md`, `PROJECT_STATUS.md`) | FAIT | — |
-| S00-T3 | Créer le dépôt Git + arborescence | À FAIRE | Dans `terangagis/` |
-| S00-T4 | Installer QGIS 3.44 LTR | À FAIRE | À télécharger sur qgis.org |
-| S00-T5 | Squelette plugin QGIS minimal (chargé dans QGIS) | À FAIRE | `metadata.txt`, panneau vide |
-| S00-T6 | Environnement de test + premier test pytest vert | À FAIRE | `qgis.testing` headless |
-| S00-T7 | Configuration : `.env.example`, conventions, README initial | À FAIRE | Clés : `OPENROUTER_API_KEY`, `GEMINI_API_KEY` |
-| S00-T8 | Documentation architecture | À FAIRE | `docs/architecture.md` |
+| S03-T1 | Agent + planning (squelette `plugin/agent/agent.py`) | FAIT | `GeoAgent`, `AgentPlan`, `AgentStep` |
+| S03-T2 | MCP stdio + bridge client (`mcp/server.py`, `mcp/bridge_client.py`) | EN COURS | squelette + client GET auth |
+| S03-T3 | Outils MCP (inspection + exécution des outils SIG) | À FAIRE | — |
+| S03-T4 | Tests MCP | À FAIRE | — |
+
+### Récapitulatif sprints terminés
+
+- **S00 Préparation** (FAIT 2026-10-08) : CDC V2.0, suivi agile, dépôt Git, QGIS 3.44.15, plugin minimal, tests config (7 verts), `docs/architecture.md`.
+- **S01 Contrôle QGIS** (FAIT 2026-10-08) : bridge HTTP `127.0.0.1` + token `X-Teranga-Token`, endpoints `/health`, `/v1/project`, `/v1/layers`, `/v1/layers/{name}/info`, `/v1/layers/selected`, marshalling thread principal Qt.
+- **S02 Outils SIG** (FAIT 2026-10-08) : `plugin/geofunc/` — lecture (`get_project_info`, `list_layers`, `get_layer_info`, `get_selected_features`), préparation (`reproject_layer`, `fix_geometries`, `remove_duplicates`, `select_by_attribute`), analyse (`buffer`, `clip`, `intersection`, `dissolve`, `spatial_join`, `distance_analysis`), sortie (`save_layer`, `export_map`) ; Processing-first ; tests `test_geofunc_*` verts (9 tests).
 
 ---
 
@@ -80,3 +82,4 @@ Légende : `À FAIRE` | `EN COURS` | `FAIT` | `BLOQUÉ`
 |---|---|---|
 | 2026-10-08 | Analyse des 2 CDC v1, plan validé, décisions (LLM, architecture, QGIS, langue) | — |
 | 2026-10-08 | Rédaction CDC combiné V2.0 ; création du dépôt de suivi (`AGENTS.md`, `PROJECT_STATUS.md`) | `TerangaGIS_Cahier_des_charges_Combine_V2.md`, `terangagis/AGENTS.md`, `terangagis/PROJECT_STATUS.md` |
+| 2026-10-08 | Sprints S00–S02 terminés (dépôt, bridge HTTP, 16 outils SIG) ; S03 démarré (agent + MCP squelettes) | `plugin/bridge/bridge.py`, `plugin/geofunc/*`, `plugin/agent/agent.py`, `mcp/server.py`, `mcp/bridge_client.py`, `tests/*` |
