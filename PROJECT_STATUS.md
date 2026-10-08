@@ -6,12 +6,12 @@
 
 | Champ | Valeur |
 |---|---|
-| **Sprint courant** | S05 — Planification multi-étapes |
+| **Sprint courant** | S06 — Interface QGIS (panneau chat) |
 | **Statut du sprint** | À FAIRE |
 | **Tâche en cours** | — |
-| **Prochaine action** | Démarrer S05 (orchestration : validation/dry-run RT3, exécution séquentielle, gestion d'erreurs) |
+| **Prochaine action** | Démarrer S06 (panneau chat PyQt, appel agent + orchestrateur, validation utilisateur) |
 | **Bloqueurs** | Tests LLM live nécessitent une clé API (H1) |
-| **Sprints terminés** | S00, S01, S02, S03, S04 |
+| **Sprints terminés** | S00, S01, S02, S03, S04, S05 |
 
 ---
 
@@ -24,7 +24,7 @@
 | S02 | Outils SIG (16 outils, Processing-first) | **FAIT** | 2026-10-08 | — |
 | S03 | Serveur MCP | **FAIT** | 2026-10-08 | MCP stdio + 16 tools + client bridge + correctif marshalling |
 | S04 | Agent langage naturel | **FAIT** | 2026-10-08 | LLM OpenAI-compatible + tool calling + planification |
-| S05 | Planification multi-étapes | À FAIRE | — | — |
+| S05 | Planification multi-étapes | **FAIT** | 2026-10-08 | Dry-run RT3 + orchestrateur + journal SQLite RT4 |
 | S06 | Interface QGIS (panneau chat) | À FAIRE | — | — |
 | S07 | Sécurité et traçabilité | À FAIRE | — | — |
 | S08 | Workflows métier (3 démos) | À FAIRE | — | — |
@@ -35,17 +35,28 @@ Légende : `À FAIRE` | `EN COURS` | `FAIT` | `BLOQUÉ`
 
 ---
 
-## Détail du sprint courant — S05 Planification multi-étapes
+## Détail du sprint courant — S06 Interface QGIS (panneau chat)
 
-**Objectif :** orchestrer un plan en plusieurs étapes avec validation et exécution contrôlée.
-**DoD :** validation/dry-run (RT3) ; exécution séquentielle via bridge ; gestion d'erreurs structurée ; journal (RT4) ; tests.
+**Objectif :** panneau de discussion dans QGIS relié à l'agent et à l'orchestrateur.
+**DoD :** saisie d'instruction, affichage du plan et des résultats, confirmation des opérations risquées, en français.
 
 | ID | Tâche | Statut | Notes |
 |---|---|---|---|
-| S05-T1 | Validation/dry-run du plan (params, CRS, sorties) | À FAIRE | RT3, RT6 |
-| S05-T2 | Orchestrateur d'exécution séquentielle | À FAIRE | via BridgeClient |
-| S05-T3 | Journal SQLite (prompts/réponses LLM, exécutions) | À FAIRE | RT4 |
-| S05-T4 | Tests orchestrateur | À FAIRE | — |
+| S06-T1 | Panneau chat (widget Qt) dans le dock | À FAIRE | `plugin/ui/` |
+| S06-T2 | Branchement agent + orchestrateur (thread) | À FAIRE | ne pas bloquer l'UI |
+| S06-T3 | Dialogue de confirmation des opérations risquées | À FAIRE | RT sécurités |
+| S06-T4 | Tests/smoke UI | À FAIRE | — |
+
+### Sprint terminé — S05 Planification multi-étapes
+
+**DoD :** validation/dry-run (RT3) ; exécution séquentielle ; gestion d'erreurs ; journal (RT4) ; tests.
+
+| ID | Tâche | Statut | Notes |
+|---|---|---|---|
+| S05-T1 | Validation/dry-run du plan | FAIT | `plugin/agent/validation.py` |
+| S05-T2 | Orchestrateur d'exécution séquentielle | FAIT | `plugin/agent/orchestrator.py` |
+| S05-T3 | Journal SQLite (RT4) | FAIT | `plugin/agent/journal.py` |
+| S05-T4 | Tests orchestrateur | FAIT | `tests/test_orchestrator.py` (8) |
 
 ### Sprint terminé — S04 Agent langage naturel
 
@@ -107,3 +118,4 @@ Légende : `À FAIRE` | `EN COURS` | `FAIT` | `BLOQUÉ`
 | 2026-10-08 | Sprints S00–S02 terminés (dépôt, bridge HTTP, 16 outils SIG) ; S03 démarré (agent + MCP squelettes) | `plugin/bridge/bridge.py`, `plugin/geofunc/*`, `plugin/agent/agent.py`, `mcp/server.py`, `mcp/bridge_client.py`, `tests/*` |
 | 2026-10-08 | S03 terminé : serveur MCP stdio + 16 tools, correctif marshalling bridge (signal/slot Qt), catalogue d'outils, tests (19 pytest + 10 checks QGIS) ; S04 démarré | `mcp/*`, `plugin/bridge/bridge.py`, `plugin/geofunc/catalog.py`, `plugin/geofunc/paths.py`, `plugin/geofunc/processing_runner.py`, `tests/*` |
 | 2026-10-08 | S04 terminé : abstraction LLM OpenAI-compatible (OpenRouter/Gemini), tool calling (16 outils), planification agent, tests (26 pytest) | `plugin/agent/llm.py`, `plugin/agent/prompts.py`, `plugin/agent/tools_schema.py`, `plugin/agent/agent.py`, `tests/test_agent_llm.py` |
+| 2026-10-08 | S05 terminé : validation/dry-run (RT3), orchestrateur séquentiel, journal SQLite (RT4), tests (35 pytest) ; S06 à démarrer | `plugin/agent/validation.py`, `plugin/agent/orchestrator.py`, `plugin/agent/journal.py`, `tests/test_orchestrator.py` |
