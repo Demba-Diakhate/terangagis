@@ -2,8 +2,9 @@
 
 Agent GeoAI pour QGIS : réalise des tâches SIG à partir d'instructions en langage naturel.
 
-> **Statut du projet : Sprint 0 (Préparation)** — voir [`PROJECT_STATUS.md`](PROJECT_STATUS.md)
+> **Statut du projet : Sprints S00–S08 terminés (S09 en cours)** — voir [`PROJECT_STATUS.md`](PROJECT_STATUS.md)
 > **Document de référence :** cahier des charges combiné V2.0 (`../TerangaGIS_Cahier_des_charges_Combine_V2.md`)
+> **Guide utilisateur :** [`docs/guide_utilisateur.md`](docs/guide_utilisateur.md)
 
 ## Principe
 
@@ -32,16 +33,19 @@ terangagis/
 ├── PROJECT_STATUS.md    # tableau de bord agile (sprint, tâches, décisions)
 ├── plugin/              # plugin QGIS (racine = dossier installé dans QGIS)
 │   ├── metadata.txt     # qgisMinimumVersion=3.40
-│   ├── core/            # configuration, journal, erreurs, compatibilité
-│   ├── geofunc/         # outils SIG PyQGIS (cœur exécutable)
-│   ├── bridge/          # serveur HTTP local (Sprint 1)
-│   ├── agent/           # boucle agent + client LLM (Sprint 4)
-│   └── ui/              # panneau chat (Sprint 6)
-├── mcp_server/          # serveur MCP stdio (Sprint 3)
+│   ├── core/            # configuration, erreurs, compatibilité
+│   ├── geofunc/         # outils SIG PyQGIS + catalogue (16 outils)
+│   ├── bridge/          # serveur HTTP local (jeton de session)
+│   ├── agent/           # LLM, planification, validation, orchestrateur, journal
+│   ├── workflows/       # 3 workflows métier (S08)
+│   └── ui/              # panneau de dialogue (chat)
+├── mcp/                 # serveur MCP stdio + client bridge
 ├── common/              # code partagé sans dépendance QGIS (config, schémas)
-├── tests/               # tests (pytest, sans LLM)
-├── docs/                # documentation technique
-└── scripts/             # scripts d'installation/dev
+├── tests/               # tests (pytest) + smokes QGIS + corpus golden
+├── docs/                # documentation technique et utilisateur
+├── scripts/             # scripts d'installation/dev + évaluation corpus
+├── Dockerfile.ci        # image CI reproductible (qgis/qgis, RT8)
+└── .github/workflows/   # CI GitHub Actions
 ```
 
 ## Installation du plugin (développement)
@@ -79,7 +83,30 @@ pytest
 ```
 
 Les tests du MVP ne passent **jamais** par un appel LLM en CI (règle RT2) ;
-la qualité de l'agent est mesurée par un corpus golden exécuté séparément (Sprint 9).
+la qualité de l'agent est mesurée par un corpus golden exécuté séparément.
+
+### Corpus golden (RT2, hors CI)
+
+```bash
+python scripts/run_golden.py --validate   # structure du corpus
+python scripts/run_golden.py --fake       # auto-test de la notation (sans LLM)
+python scripts/run_golden.py              # évaluation réelle (clé LLM requise)
+```
+
+### Smokes PyQGIS (QGIS requis)
+
+```bash
+"C:/Program Files/QGIS 3.44.15/bin/python-qgis-ltr.bat" tests/tools_smoke.py
+"C:/Program Files/QGIS 3.44.15/bin/python-qgis-ltr.bat" tests/bridge_http_smoke.py
+"C:/Program Files/QGIS 3.44.15/bin/python-qgis-ltr.bat" tests/workflows_smoke.py
+```
+
+### CI Docker (RT8)
+
+```bash
+docker build -f Dockerfile.ci -t terangagis-ci .
+docker run --rm terangagis-ci
+```
 
 ## Règles de travail
 

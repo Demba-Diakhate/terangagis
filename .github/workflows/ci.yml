@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  unit-tests:
+    name: Tests unitaires (Python)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Installer les dépendances
+        run: pip install -r requirements-dev.txt
+      - name: Pytest (sans LLM, sans QGIS)
+        run: python -m pytest -q
+      - name: Valider le corpus golden (RT2)
+        run: python scripts/run_golden.py --validate
+
+  qgis-tests:
+    name: Tests QGIS headless (RT8)
+    runs-on: ubuntu-latest
+    container:
+      image: qgis/qgis:release-3_44
+    env:
+      QT_QPA_PLATFORM: offscreen
+      TERANGA_OUTPUT_DIR: /tmp/teranga
+    steps:
+      - uses: actions/checkout@v4
+      - name: Dépendances
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends python3-pip xvfb
+          pip3 install --no-cache-dir pytest
+      - name: Pytest
+        run: python3 -m pytest -q
+      - name: Smoke outils SIG
+        run: xvfb-run -a python3 tests/tools_smoke.py
+      - name: Smoke bridge HTTP
+        run: xvfb-run -a python3 tests/bridge_http_smoke.py
+      - name: Smoke workflows métier
+        run: xvfb-run -a python3 tests/workflows_smoke.py
+      - name: Smoke plugin
+        run: xvfb-run -a python3 tests/plugin_smoke.py
+      - name: Smoke panneau chat
+        run: xvfb-run -a python3 tests/chat_panel_smoke.py

@@ -1,0 +1,27 @@
+# Image de CI reproductible pour TerangaGIS (RT8).
+# Basée sur l'image officielle QGIS afin d'exécuter les tests PyQGIS headless.
+#
+#   docker build -f Dockerfile.ci -t terangagis-ci .
+#   docker run --rm terangagis-ci
+#
+FROM qgis/qgis:release-3_44
+
+ENV QT_QPA_PLATFORM=offscreen \
+    PYTHONUNBUFFERED=1 \
+    TERANGA_OUTPUT_DIR=/tmp/teranga
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends python3-pip xvfb \
+    && rm -rf /var/lib/apt/lists/* \
+    && pip3 install --no-cache-dir pytest
+
+WORKDIR /app
+COPY . /app
+
+CMD ["bash", "-lc", "\
+  python3 -m pytest -q && \
+  xvfb-run -a python3 tests/tools_smoke.py && \
+  xvfb-run -a python3 tests/bridge_http_smoke.py && \
+  xvfb-run -a python3 tests/workflows_smoke.py && \
+  xvfb-run -a python3 tests/plugin_smoke.py && \
+  xvfb-run -a python3 tests/chat_panel_smoke.py"]

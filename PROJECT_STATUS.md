@@ -6,12 +6,12 @@
 
 | Champ | Valeur |
 |---|---|
-| **Sprint courant** | S09 — Tests et qualité (corpus golden, CI) |
+| **Sprint courant** | S10 — Release MVP |
 | **Statut du sprint** | À FAIRE |
 | **Tâche en cours** | — |
-| **Prochaine action** | Démarrer S09 (corpus golden RT2, CI) |
-| **Bloqueurs** | Tests LLM live non exécutés (clé API absente — H1) |
-| **Sprints terminés** | S00, S01, S02, S03, S04, S05, S06, S07, S08 |
+| **Prochaine action** | Démarrer S10 (packaging release MVP) |
+| **Bloqueurs** | CI Docker (RT8) non exécutée localement (à valider au premier push) ; tests LLM live (clé absente — H1) |
+| **Sprints terminés** | S00, S01, S02, S03, S04, S05, S06, S07, S08, S09 |
 
 ---
 
@@ -28,7 +28,7 @@
 | S06 | Interface QGIS (panneau chat) | **FAIT** | 2026-10-08 | ChatPanel + QThread + confirmation |
 | S07 | Sécurité et traçabilité | **FAIT** | 2026-10-08 | Sanitisation RT7 + journal lecture/export |
 | S08 | Workflows métier (3 démos) | **FAIT** | 2026-10-08 | 3 workflows + runner + jeux de test documentés |
-| S09 | Tests et qualité (corpus golden, CI) | À FAIRE | — | — |
+| S09 | Tests et qualité (corpus golden, CI) | **FAIT** | 2026-10-08 | Corpus 30 cas + CI Docker/GitHub Actions + doc utilisateur |
 | S10 | Release MVP | À FAIRE | — | — |
 
 Légende : `À FAIRE` | `EN COURS` | `FAIT` | `BLOQUÉ`
@@ -46,6 +46,18 @@ Légende : `À FAIRE` | `EN COURS` | `FAIT` | `BLOQUÉ`
 | S07-T2 | Exposition du journal (consultation) | À FAIRE | RT4 |
 | S07-T3 | Gestion d'erreurs homogène (bridge/agent/UI) | À FAIRE | — |
 | S07-T4 | Tests sécurité/traçabilité | À FAIRE | — |
+
+### Sprint terminé — S09 Tests et qualité
+
+**DoD :** tests unitaires/intégration/erreur/sécurité verts ; corpus golden (RT2) ; CI Docker (RT8) ; documentation utilisateur.
+
+| ID | Tâche | Statut | Notes |
+|---|---|---|---|
+| S09-T1 | Corpus golden (~30 instructions FR → outils attendus) | FAIT | `tests/golden/corpus.json` (30 cas), `plugin/agent/golden.py` |
+| S09-T2 | Runner d'évaluation hors CI (RT2) | FAIT | `scripts/run_golden.py` (`--validate`, `--fake`, réel) ; auto-test 30/30 |
+| S09-T3 | Tests d'erreur et de sécurité | FAIT | `tests/test_errors.py`, `tests/test_sanitization.py` |
+| S09-T4 | CI Docker qgis/qgis + GitHub Actions (RT8) | FAIT | `Dockerfile.ci`, `.github/workflows/ci.yml` |
+| S09-T5 | Documentation utilisateur | FAIT | `docs/guide_utilisateur.md`, README actualisé |
 
 ### Sprint terminé — S08 Workflows métier (3 démos)
 
@@ -136,6 +148,7 @@ Légende : `À FAIRE` | `EN COURS` | `FAIT` | `BLOQUÉ`
 | 2026-10-08 | L'agent/orchestrateur s'exécute hors thread principal ; le bridge service la boucle Qt du thread principal | R6, `tests/e2e_agent_smoke.py` |
 | 2026-10-08 | Sanitisation systématique (RT7) de l'instruction et du contexte projet avant envoi au LLM (troncature 200, motifs de secrets neutralisés) | RT7, `plugin/agent/sanitization.py` |
 | 2026-10-08 | Workflows métier = plans d'outils déclaratifs (`Workflow`), exécutés en chaîne par un runner qui recharge chaque sortie dans le projet sous son nom de fichier | S08, `plugin/workflows/` |
+| 2026-10-08 | Corpus golden séparé du code plugin (`plugin/agent/golden.py` pur + `tests/golden/corpus.json`), évalué hors CI via `scripts/run_golden.py` | RT2, S09 |
 
 ---
 
@@ -145,6 +158,7 @@ Légende : `À FAIRE` | `EN COURS` | `FAIT` | `BLOQUÉ`
 |---|---|---|
 | H1 | Quotas exacts OpenRouter/Gemini free tier | À vérifier au Sprint 4 |
 | H5 | Modèle LLM précis selon qualité du tool calling | Arbitrage Sprint 4 |
+| H6 | CI Docker (RT8) : image `qgis/qgis:release-3_44` à valider au premier push (non exécutable dans l'environnement de dev courant) | Sprint 9 |
 
 ---
 
@@ -162,3 +176,4 @@ Légende : `À FAIRE` | `EN COURS` | `FAIT` | `BLOQUÉ`
 | 2026-10-08 | S06 terminé : interface de dialogue (ChatPanel + QThread + confirmation), formatage FR, politique de confirmation ; tests (44 pytest + smokes UI) | `plugin/ui/chat_panel.py`, `plugin/ui/formatting.py`, `plugin/agent/policy.py`, `plugin/terangagis_plugin.py`, `tests/*` |
 | 2026-10-08 | S07 terminé : sanitisation RT7, journal lecture/export, branchement sanitisation + journal dans l'agent/plugin ; tests (53 pytest + smokes QGIS) ; S08 à démarrer | `plugin/agent/sanitization.py`, `plugin/agent/journal.py`, `plugin/agent/agent.py`, `plugin/terangagis_plugin.py`, `tests/test_sanitization.py`, `tests/test_journal_read.py` |
 | 2026-10-08 | S08 terminé : 3 workflows métier (routes, nettoyage GPS, postes de santé), runner de chaînage, jeux de test documentés, exemples dans le prompt ; tests (61 pytest + 8 checks workflows) ; S09 à démarrer | `plugin/workflows/*`, `plugin/agent/prompts.py`, `tests/test_workflows.py`, `tests/workflows_smoke.py` |
+| 2026-10-08 | S09 terminé : corpus golden (30 cas) + runner hors CI, tests erreur/sécurité, CI Docker qgis/qgis + GitHub Actions, guide utilisateur ; tests (76 pytest + smokes QGIS) ; S10 à démarrer | `tests/golden/corpus.json`, `plugin/agent/golden.py`, `scripts/run_golden.py`, `tests/test_golden_corpus.py`, `tests/test_errors.py`, `Dockerfile.ci`, `.github/workflows/ci.yml`, `docs/guide_utilisateur.md` |
