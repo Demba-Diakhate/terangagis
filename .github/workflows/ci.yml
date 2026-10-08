@@ -20,6 +20,8 @@ jobs:
         run: python -m pytest -q
       - name: Valider le corpus golden (RT2)
         run: python scripts/run_golden.py --validate
+      - name: Smoke packaging (zip + relocalisation)
+        run: python tests/packaging_smoke.py
 
   qgis-tests:
     name: Tests QGIS headless (RT8)

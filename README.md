@@ -2,7 +2,7 @@
 
 Agent GeoAI pour QGIS : réalise des tâches SIG à partir d'instructions en langage naturel.
 
-> **Statut du projet : Sprints S00–S08 terminés (S09 en cours)** — voir [`PROJECT_STATUS.md`](PROJECT_STATUS.md)
+> **Statut du projet : MVP livré (S00–S10 terminés, version 1.0.0)** — voir [`PROJECT_STATUS.md`](PROJECT_STATUS.md)
 > **Document de référence :** cahier des charges combiné V2.0 (`../TerangaGIS_Cahier_des_charges_Combine_V2.md`)
 > **Guide utilisateur :** [`docs/guide_utilisateur.md`](docs/guide_utilisateur.md)
 
@@ -51,21 +51,26 @@ terangagis/
 ## Installation du plugin (développement)
 
 1. Installer QGIS 3.44 LTR depuis <https://qgis.org> (onglet Download → LTR).
-2. Copier le dossier `plugin/` dans le profil QGIS sous le nom `terangagis` :
+2. Installer le plugin (avec ses paquets embarqués `common` et `mcp`) :
 
 ```powershell
-# Windows (PowerShell) — voir aussi scripts/install_plugin.ps1
-$profile = "$env:APPDATA\QGIS\QGIS3\profiles\default\python\plugins"
-New-Item -ItemType Directory -Force -Path $profile | Out-Null
-Copy-Item -Recurse -Force plugin "$profile\terangagis"
+# Windows (PowerShell)
+powershell -ExecutionPolicy Bypass -File scripts/install_plugin.ps1
 ```
 
 ```bash
 # Linux / macOS
-cp -r plugin ~/.local/share/QGIS/QGIS3/profiles/default/python/plugins/terangagis
+python scripts/build_plugin.py            # génère dist/terangagis-<version>.zip
+# puis décompresser l'archive dans le dossier des extensions du profil QGIS
 ```
 
 3. Redémarrer QGIS → Extensions → Gérer les extensions → activer **TerangaGIS**.
+
+## Packaging (release)
+
+```bash
+python scripts/build_plugin.py   # produit dist/terangagis-<version>.zip (installable dans QGIS)
+```
 
 ## Configuration LLM
 

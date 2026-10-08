@@ -21,6 +21,7 @@ htmlcov/
 # Packaging QGIS
 *.zip
 *.qrc
+dist/
 
 # Artefacts QGIS locaux
 symbology-style.db

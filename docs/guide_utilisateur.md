@@ -13,13 +13,19 @@ Processing et journalise chaque action.
 
 ## 2. Installation du plugin
 
-1. Installer QGIS 3.44 LTR.
-2. Copier le dossier `plugin/` dans les extensions du profil QGIS sous le nom `terangagis` :
+Deux méthodes :
+
+**A. Depuis le paquet de release** : décompresser `dist/terangagis-<version>.zip`
+dans le dossier des extensions du profil QGIS (il contient un dossier `terangagis/`).
+
+**B. Depuis les sources (développement)** :
 
 ```powershell
-$profile = "$env:APPDATA\QGIS\QGIS3\profiles\default\python\plugins"
-Copy-Item -Recurse -Force plugin "$profile\terangagis"
+powershell -ExecutionPolicy Bypass -File scripts/install_plugin.ps1
 ```
+
+Le script copie le plugin et ses paquets embarqués (`common`, `mcp`) sous le nom
+`terangagis` dans le profil QGIS.
 
 3. Redémarrer QGIS → **Extensions → Gérer les extensions** → activer **TerangaGIS**.
 

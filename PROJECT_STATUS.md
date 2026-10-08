@@ -7,11 +7,11 @@
 | Champ | Valeur |
 |---|---|
 | **Sprint courant** | S10 — Release MVP |
-| **Statut du sprint** | À FAIRE |
+| **Statut du sprint** | **FAIT** |
 | **Tâche en cours** | — |
-| **Prochaine action** | Démarrer S10 (packaging release MVP) |
+| **Prochaine action** | Release MVP prête : tag `v1.0.0` + push (à valider par l'utilisateur) |
 | **Bloqueurs** | CI Docker (RT8) non exécutée localement (à valider au premier push) ; tests LLM live (clé absente — H1) |
-| **Sprints terminés** | S00, S01, S02, S03, S04, S05, S06, S07, S08, S09 |
+| **Sprints terminés** | S00, S01, S02, S03, S04, S05, S06, S07, S08, S09, S10 |
 
 ---
 
@@ -29,7 +29,7 @@
 | S07 | Sécurité et traçabilité | **FAIT** | 2026-10-08 | Sanitisation RT7 + journal lecture/export |
 | S08 | Workflows métier (3 démos) | **FAIT** | 2026-10-08 | 3 workflows + runner + jeux de test documentés |
 | S09 | Tests et qualité (corpus golden, CI) | **FAIT** | 2026-10-08 | Corpus 30 cas + CI Docker/GitHub Actions + doc utilisateur |
-| S10 | Release MVP | À FAIRE | — | — |
+| S10 | Release MVP | **FAIT** | 2026-10-08 | Packaging + 12 critères vérifiés |
 
 Légende : `À FAIRE` | `EN COURS` | `FAIT` | `BLOQUÉ`
 
@@ -46,6 +46,40 @@ Légende : `À FAIRE` | `EN COURS` | `FAIT` | `BLOQUÉ`
 | S07-T2 | Exposition du journal (consultation) | À FAIRE | RT4 |
 | S07-T3 | Gestion d'erreurs homogène (bridge/agent/UI) | À FAIRE | — |
 | S07-T4 | Tests sécurité/traçabilité | À FAIRE | — |
+
+### Sprint terminé — S10 Release MVP
+
+**Livrables :** plugin QGIS, serveur MCP, agent, tests, documentation technique et
+utilisateur, exemples/workflows, jeux de données de démonstration, scripts
+d'installation, paquet installable, rapport de validation.
+
+| ID | Tâche | Statut | Notes |
+|---|---|---|---|
+| S10-T1 | Plugin relocalisable + paquets embarqués (`common`, `mcp`) | FAIT | `plugin/__init__.py` (alias `plugin`, sys.path) |
+| S10-T2 | Packaging installable | FAIT | `scripts/build_plugin.py` → `dist/terangagis-1.0.0.zip` |
+| S10-T3 | Script d'installation dev | FAIT | `scripts/install_plugin.ps1` |
+| S10-T4 | Métadonnées de release | FAIT | `plugin/metadata.txt` version=1.0.0 |
+| S10-T5 | Vérification des 12 critères d'acceptation (§23) | FAIT | tableau ci-dessous |
+
+**Vérification des 12 critères d'acceptation du MVP (§23 du CDC)**
+
+| # | Critère | Vérifié | Preuve |
+|---|---|---|---|
+| 1 | QGIS peut communiquer avec TerangaGIS | OUI | bridge HTTP local ; `tests/bridge_http_smoke.py` (10/10), `tests/plugin_smoke.py` (6/6) |
+| 2 | Le projet et les couches peuvent être inspectés | OUI | `/v1/project`, `/v1/layers`, outils lecture ; `tests/tools_smoke.py` |
+| 3 | L'utilisateur peut donner une instruction en langage naturel | OUI | `plugin/ui/chat_panel.py` + `plugin/agent/agent.py` |
+| 4 | L'agent peut produire un plan | OUI | `GeoAgent.plan` ; `tests/e2e_agent_smoke.py`, `tests/test_agent_llm.py` |
+| 5 | Le plan peut être validé | OUI | `plugin/agent/validation.py` (RT3) ; `tests/test_errors.py`, `tests/test_orchestrator.py` |
+| 6 | Au moins quinze outils disponibles | OUI | 16 outils ; `tests/tools_smoke.py` (16/16) |
+| 7 | Plusieurs outils peuvent être enchaînés | OUI | `plugin/agent/orchestrator.py`, `plugin/workflows/runner.py` |
+| 8 | Les erreurs sont gérées | OUI | `plugin/core/errors.py`, `ToolResult`, `tests/test_errors.py` |
+| 9 | Les opérations sensibles demandent confirmation | OUI | `plugin/agent/policy.py` + dialogue QMessageBox |
+| 10 | Les résultats sont ajoutés/exportés correctement | OUI | `save_layer`, `export_map` ; runner qui ajoute les sorties |
+| 11 | Les actions sont journalisées | OUI | `plugin/agent/journal.py` (SQLite, RT4) ; `tests/test_journal_read.py` |
+| 12 | Trois workflows de démonstration sont fonctionnels | OUI | `tests/workflows_smoke.py` (8/8) sur jeux de test documentés |
+
+**Bilan des tests de release :** 76 pytest + packaging_smoke (15 checks) +
+smokes QGIS (16 + 10 + 8 + 6 + 4 + 7 checks) — tous verts.
 
 ### Sprint terminé — S09 Tests et qualité
 
@@ -149,6 +183,8 @@ Légende : `À FAIRE` | `EN COURS` | `FAIT` | `BLOQUÉ`
 | 2026-10-08 | Sanitisation systématique (RT7) de l'instruction et du contexte projet avant envoi au LLM (troncature 200, motifs de secrets neutralisés) | RT7, `plugin/agent/sanitization.py` |
 | 2026-10-08 | Workflows métier = plans d'outils déclaratifs (`Workflow`), exécutés en chaîne par un runner qui recharge chaque sortie dans le projet sous son nom de fichier | S08, `plugin/workflows/` |
 | 2026-10-08 | Corpus golden séparé du code plugin (`plugin/agent/golden.py` pur + `tests/golden/corpus.json`), évalué hors CI via `scripts/run_golden.py` | RT2, S09 |
+| 2026-10-08 | Plugin rendu **relocalisable** : `plugin/__init__.py` enregistre l'alias `sys.modules['plugin']` et ajoute le dossier du plugin au `sys.path`, permettant d'embarquer `common`/`mcp` et de s'installer sous le nom `terangagis` | S10, `plugin/__init__.py` |
+| 2026-10-08 | Release MVP versionnée `1.0.0` ; paquet `dist/terangagis-1.0.0.zip` (dossier `terangagis/` autonome) | S10, `scripts/build_plugin.py`, `plugin/metadata.txt` |
 
 ---
 
@@ -177,3 +213,4 @@ Légende : `À FAIRE` | `EN COURS` | `FAIT` | `BLOQUÉ`
 | 2026-10-08 | S07 terminé : sanitisation RT7, journal lecture/export, branchement sanitisation + journal dans l'agent/plugin ; tests (53 pytest + smokes QGIS) ; S08 à démarrer | `plugin/agent/sanitization.py`, `plugin/agent/journal.py`, `plugin/agent/agent.py`, `plugin/terangagis_plugin.py`, `tests/test_sanitization.py`, `tests/test_journal_read.py` |
 | 2026-10-08 | S08 terminé : 3 workflows métier (routes, nettoyage GPS, postes de santé), runner de chaînage, jeux de test documentés, exemples dans le prompt ; tests (61 pytest + 8 checks workflows) ; S09 à démarrer | `plugin/workflows/*`, `plugin/agent/prompts.py`, `tests/test_workflows.py`, `tests/workflows_smoke.py` |
 | 2026-10-08 | S09 terminé : corpus golden (30 cas) + runner hors CI, tests erreur/sécurité, CI Docker qgis/qgis + GitHub Actions, guide utilisateur ; tests (76 pytest + smokes QGIS) ; S10 à démarrer | `tests/golden/corpus.json`, `plugin/agent/golden.py`, `scripts/run_golden.py`, `tests/test_golden_corpus.py`, `tests/test_errors.py`, `Dockerfile.ci`, `.github/workflows/ci.yml`, `docs/guide_utilisateur.md` |
+| 2026-10-08 | S10 terminé : plugin relocalisable, packaging `dist/terangagis-1.0.0.zip`, script d'installation, métadonnées 1.0.0, vérification des 12 critères du MVP ; tests (76 pytest + packaging + smokes QGIS) — **Release MVP** | `plugin/__init__.py`, `plugin/metadata.txt`, `scripts/build_plugin.py`, `scripts/install_plugin.ps1`, `tests/packaging_smoke.py`, `.github/workflows/ci.yml`, `README.md`, `docs/guide_utilisateur.md` |
