@@ -73,5 +73,16 @@ class DistanceAnalysis(GeoTool):
         l1 = QgsProject.instance().mapLayersByName(str(from1)); l2 = QgsProject.instance().mapLayersByName(str(to1))
         if not l1 or not l2: return ToolResult(ok=False,error={'code':'layer_not_found','message':'Couche introuvable'})
         out = params.get('output') or output_path('distances')
-        res = run_processing('native:distance_matrix', {'INPUT': l1[0], 'TARGET': l2[0], 'OUTPUT': out})
+        def _first_field(layer):
+            fields = layer.fields()
+            return fields[0].name() if fields.count() else ''
+        res = run_processing('qgis:distancematrix', {
+            'INPUT': l1[0],
+            'INPUT_FIELD': _first_field(l1[0]),
+            'TARGET': l2[0],
+            'TARGET_FIELD': _first_field(l2[0]),
+            'MATRIX_TYPE': 0,
+            'NEAREST_POINTS': 0,
+            'OUTPUT': out,
+        })
         return ToolResult(ok=True,data={'output': res.get('OUTPUT')})

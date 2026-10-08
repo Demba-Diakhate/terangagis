@@ -78,4 +78,8 @@ def run_tool(name: str, params: Dict[str, Any]):
     cls = _REGISTRY.get(name)
     if cls is None:
         return None
-    return cls().run(params or {})
+    try:
+        return cls().run(params or {})
+    except Exception as e:  # noqa: BLE001
+        from .tool_base import ToolResult
+        return ToolResult(ok=False, error={'code': 'tool_exception', 'message': str(e)})

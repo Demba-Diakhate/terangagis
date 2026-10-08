@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import os
 import sqlite3
+import threading
 import time
 from typing import Any
 
@@ -13,7 +14,8 @@ class Journal:
         self.path = path or os.path.join(
             os.environ.get('TEMP') or os.getcwd(), 'terangagis_journal.sqlite'
         )
-        self._conn = sqlite3.connect(self.path)
+        self._lock = threading.Lock()
+        self._conn = sqlite3.connect(self.path, check_same_thread=False)
         self._conn.execute(
             'CREATE TABLE IF NOT EXISTS events ('
             'id INTEGER PRIMARY KEY AUTOINCREMENT, '
@@ -22,11 +24,12 @@ class Journal:
         self._conn.commit()
 
     def _record(self, kind: str, payload: dict[str, Any]) -> None:
-        self._conn.execute(
-            'INSERT INTO events (ts, kind, payload) VALUES (?, ?, ?)',
-            (time.time(), kind, json.dumps(payload, ensure_ascii=False)),
-        )
-        self._conn.commit()
+        with self._lock:
+            self._conn.execute(
+                'INSERT INTO events (ts, kind, payload) VALUES (?, ?, ?)',
+                (time.time(), kind, json.dumps(payload, ensure_ascii=False)),
+            )
+            self._conn.commit()
 
     def record_llm(self, prompt: Any, response: Any) -> None:
         self._record('llm', {'prompt': prompt, 'response': response})

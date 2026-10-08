@@ -97,6 +97,9 @@ Légende : `À FAIRE` | `EN COURS` | `FAIT` | `BLOQUÉ`
 | 2026-10-08 | LLM : OpenRouter + Google Gemini free tier, abstraction compatible OpenAI | CDC V2, ADR D-03 |
 | 2026-10-08 | Interface et messages en français | CDC V2, ADR D-04 |
 | 2026-10-08 | Cahier des charges combiné V2.0 = document de référence unique | — |
+| 2026-10-08 | Marshalling bridge : signal/slot Qt (`QueuedConnection`) sur un `QObject` du thread principal (remplace `QTimer.singleShot` en thread worker) | `plugin/bridge/bridge.py` |
+| 2026-10-08 | `distance_analysis` = `qgis:distancematrix` (fournisseur QGIS ; non `native:` en 3.44), champs d'identité auto | RT1, `plugin/geofunc/tools_analyze.py` |
+| 2026-10-08 | L'agent/orchestrateur s'exécute hors thread principal ; le bridge service la boucle Qt du thread principal | R6, `tests/e2e_agent_smoke.py` |
 
 ---
 
@@ -119,3 +122,4 @@ Légende : `À FAIRE` | `EN COURS` | `FAIT` | `BLOQUÉ`
 | 2026-10-08 | S03 terminé : serveur MCP stdio + 16 tools, correctif marshalling bridge (signal/slot Qt), catalogue d'outils, tests (19 pytest + 10 checks QGIS) ; S04 démarré | `mcp/*`, `plugin/bridge/bridge.py`, `plugin/geofunc/catalog.py`, `plugin/geofunc/paths.py`, `plugin/geofunc/processing_runner.py`, `tests/*` |
 | 2026-10-08 | S04 terminé : abstraction LLM OpenAI-compatible (OpenRouter/Gemini), tool calling (16 outils), planification agent, tests (26 pytest) | `plugin/agent/llm.py`, `plugin/agent/prompts.py`, `plugin/agent/tools_schema.py`, `plugin/agent/agent.py`, `tests/test_agent_llm.py` |
 | 2026-10-08 | S05 terminé : validation/dry-run (RT3), orchestrateur séquentiel, journal SQLite (RT4), tests (35 pytest) ; S06 à démarrer | `plugin/agent/validation.py`, `plugin/agent/orchestrator.py`, `plugin/agent/journal.py`, `tests/test_orchestrator.py` |
+| 2026-10-08 | Durcissement : balayage des 16 outils (QGIS), test e2e agent→orchestrateur→bridge, branchement du bridge dans le plugin ; correctifs marshalling (signal/slot Qt), `qgis:distancematrix`, sorties inscriptibles, journal thread-safe | `plugin/bridge/bridge.py`, `plugin/geofunc/*`, `plugin/agent/journal.py`, `plugin/terangagis_plugin.py`, `tests/tools_smoke.py`, `tests/e2e_agent_smoke.py`, `tests/plugin_smoke.py` |
