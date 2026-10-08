@@ -30,8 +30,9 @@ class AgentError(Exception):
 
 
 class GeoAgent:
-    def __init__(self, llm: LLMClient | None = None) -> None:
+    def __init__(self, llm: LLMClient | None = None, journal: Any = None) -> None:
         self.llm = llm or LLMClient()
+        self.journal = journal
 
     def plan(self, user_query: str, context: str = '') -> AgentPlan:
         """Produit un plan (liste d'étapes) sans exécuter les outils."""
@@ -48,7 +49,19 @@ class GeoAgent:
         except LLMError as e:
             raise AgentError(str(e)) from e
 
-        return self._parse(message)
+        if self.journal is not None:
+            try:
+                self.journal.record_llm(messages, message)
+            except Exception:  # noqa: BLE001
+                pass
+
+        plan = self._parse(message)
+        if self.journal is not None:
+            try:
+                self.journal.record_plan(plan)
+            except Exception:  # noqa: BLE001
+                pass
+        return plan
 
     @staticmethod
     def _parse(message: Dict[str, Any]) -> AgentPlan:

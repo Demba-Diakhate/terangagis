@@ -99,3 +99,20 @@ def test_agent_rejects_non_object_arguments():
     agent = GeoAgent(llm=LLMClient(settings=_settings(), transport=transport))
     with pytest.raises(AgentError):
         agent.plan("buffer")
+
+def test_agent_journals_llm_and_plan(tmp_path):
+    from plugin.agent.journal import Journal
+
+    def transport(url, headers, body, timeout):
+        return {"choices": [{"message": {
+            "role": "assistant", "content": "ok",
+            "tool_calls": [{"id": "1", "type": "function",
+                            "function": {"name": "list_layers", "arguments": "{}"}}],
+        }}]}
+
+    journal = Journal(str(tmp_path / "j.sqlite"))
+    agent = GeoAgent(llm=LLMClient(settings=_settings(), transport=transport), journal=journal)
+    agent.plan("liste les couches")
+    assert journal.count("llm") == 1
+    assert journal.count("plan") == 1
+    journal.close()

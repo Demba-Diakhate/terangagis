@@ -8,6 +8,8 @@ from typing import Any, Dict, List
 
 from mcp.server import TOOL_SCHEMAS
 
+__all__ = ['TOOL_SCHEMAS', 'TOOL_NAMES', 'openai_tools']
+
 
 def openai_tools() -> List[Dict[str, Any]]:
     tools: List[Dict[str, Any]] = []
