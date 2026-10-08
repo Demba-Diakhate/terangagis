@@ -1,11 +1,11 @@
 """Plugin TerangaGIS.
 
-Fournit une action de menu/toolbar, un panneau latéral et démarre le bridge
-HTTP local utilisé par l'agent (S06 ajoutera l'interface de dialogue).
+Fournit une action de menu/toolbar, un panneau de dialogue relié à l'agent et
+démarre le bridge HTTP local utilisé pour l'exécution des outils SIG.
 """
 
 from qgis.PyQt.QtCore import Qt
-from qgis.PyQt.QtWidgets import QAction, QDockWidget, QLabel, QVBoxLayout, QWidget
+from qgis.PyQt.QtWidgets import QAction, QDockWidget
 
 PLUGIN_NAME = "TerangaGIS"
 
@@ -16,7 +16,10 @@ class TerangaGISPlugin:
         self.action = None
         self.dock = None
         self.bridge = None
-        self.status_label = None
+        self.bridge_info_cache = None
+        self.agent = None
+        self.orchestrator = None
+        self.panel = None
 
     def initGui(self):
         self.action = QAction(PLUGIN_NAME, self.iface.mainWindow())
@@ -37,33 +40,61 @@ class TerangaGISPlugin:
         try:
             self.bridge = BridgeServer()
             info = self.bridge.start()
-            self._set_status(
-                f"Connecteur prêt sur 127.0.0.1:{info['port']}.\n"
-                "Le dialogue en langage naturel arrive au Sprint 6."
-            )
+            self.bridge_info_cache = info
+            self._wire_agent()
+            self._set_status(f"Connecteur prêt (127.0.0.1:{info['port']}).")
         except Exception as e:  # noqa: BLE001
             self.bridge = None
             self._set_status(f"Échec du démarrage du bridge : {e}")
 
+    def _wire_agent(self):
+        try:
+            from mcp.bridge_client import BridgeClient
+            from plugin.agent.agent import GeoAgent
+            from plugin.agent.orchestrator import Orchestrator
+            client = BridgeClient(self.bridge.base_url, self.bridge.access_token)
+            self.agent = GeoAgent()
+            self.orchestrator = Orchestrator(client)
+            if self.panel is not None:
+                self.panel.agent = self.agent
+                self.panel.orchestrator = self.orchestrator
+            self._set_status("Prêt. Saisissez une instruction en français.")
+        except Exception as e:  # noqa: BLE001
+            self.agent = None
+            self.orchestrator = None
+            self._set_status(f"Agent indisponible : {e}")
+
     def _create_dock(self):
-        container = QWidget()
-        layout = QVBoxLayout(container)
-        self.status_label = QLabel(
-            "TerangaGIS\n\nInitialisation du connecteur…"
-        )
-        self.status_label.setAlignment(Qt.AlignCenter)
-        self.status_label.setWordWrap(True)
-        layout.addWidget(self.status_label)
+        from plugin.ui.chat_panel import ChatPanel
+        self.panel = ChatPanel(self.agent, self.orchestrator)
+        self.panel._layer_crs_provider = self._layer_crs_map
 
         self.dock = QDockWidget(PLUGIN_NAME, self.iface.mainWindow())
         self.dock.setObjectName("TerangaGISPanel")
-        self.dock.setWidget(container)
+        self.dock.setWidget(self.panel)
         self.iface.addDockWidget(Qt.RightDockWidgetArea, self.dock)
 
+    def _layer_crs_map(self):
+        try:
+            from qgis.core import QgsProject
+        except Exception:  # noqa: BLE001
+            return {}
+        mapping = {}
+        for layer in QgsProject.instance().mapLayers().values():
+            try:
+                crs = layer.crs()
+                if crs.isValid():
+                    mapping[layer.name()] = crs.authid()
+            except Exception:  # noqa: BLE001
+                continue
+        return mapping
+
+    def _set_status(self, message):
+        if self.panel is not None:
+            self.panel.status.setText(message)
+
     def bridge_info(self):
-        if self.bridge is None:
-            return None
-        return {'base_url': self.bridge.base_url, 'token': self.bridge.access_token}
+        return self.bridge_info_cache
 
     def toggle_panel(self, checked=False):
         if self.dock is None:
@@ -91,7 +122,3 @@ class TerangaGISPlugin:
             self.dock.close()
             self.iface.mainWindow().removeDockWidget(self.dock)
             self.dock = None
-
-    def _set_status(self, message):
-        if self.status_label is not None:
-            self.status_label.setText(f"{PLUGIN_NAME}\n\n{message}")

@@ -52,6 +52,8 @@ def main() -> int:
     info = plugin.bridge_info()
     check('bridge_info', bool(info) and info.get('base_url', '').startswith('http://127.0.0.1:') and bool(info.get('token')), info)
     check('dock_cree', plugin.dock is not None)
+    check('panneau_chat', plugin.panel is not None and hasattr(plugin.panel, 'input'))
+    check('agent_branche', plugin.agent is not None and plugin.orchestrator is not None)
 
     plugin.unload()
     check('bridge_arrete', plugin.bridge is None)
