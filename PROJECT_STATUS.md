@@ -21,7 +21,7 @@
 |---|---|---|---|---|
 | S00 | Préparation | **FAIT** | 2026-10-08 | CDC V2 + suivi agile faits ; git/plugin/tests à faire |
 | S01 | Contrôle QGIS (bridge HTTP + inspection) | **FAIT** | 2026-10-08 | — |
-| S02 | Outils SIG (16 outils, Processing-first) | **EN COURS** | — | — |
+| S02 | Outils SIG (16 outils, Processing-first) | **FAIT** | 2026-10-08 | — |
 | S03 | Serveur MCP | À FAIRE | — | — |
 | S04 | Agent langage naturel | À FAIRE | — | LLM : OpenRouter + Gemini free tier |
 | S05 | Planification multi-étapes | À FAIRE | — | — |
