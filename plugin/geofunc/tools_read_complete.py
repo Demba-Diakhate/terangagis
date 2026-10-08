@@ -9,6 +9,7 @@ def _map_units(mu):
 
 class GetProjectInfo(GeoTool):
     name = "get_project_info"
+    category = "read"
     def run(self, params: dict[str, Any]) -> ToolResult:
         proj = QgsProject.instance()
         crs = proj.crs()
@@ -21,6 +22,7 @@ class GetProjectInfo(GeoTool):
 
 class ListLayers(GeoTool):
     name = "list_layers"
+    category = "read"
     def run(self, params: dict[str, Any]) -> ToolResult:
         proj = QgsProject.instance()
         out=[]
@@ -38,6 +40,7 @@ class ListLayers(GeoTool):
 
 class GetLayerInfo(GeoTool):
     name = "get_layer_info"
+    category = "read"
     def run(self, params: dict[str, Any]) -> ToolResult:
         name = params.get('name') or params.get('layer')
         if not name: return ToolResult(ok=False,error={'code':'missing_param','message':"Paramètre 'name' requis"})
@@ -54,6 +57,7 @@ class GetLayerInfo(GeoTool):
 
 class GetSelectedFeatures(GeoTool):
     name = "get_selected_features"
+    category = "read"
     def run(self, params: dict[str, Any]) -> ToolResult:
         res=[]
         for lyr in QgsProject.instance().mapLayers().values():

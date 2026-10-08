@@ -5,7 +5,7 @@ import time
 import uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any, Callable
-from qgis.PyQt.QtCore import QCoreApplication, QTimer
+from qgis.PyQt.QtCore import QCoreApplication, QObject, QThread, Qt, pyqtSignal, pyqtSlot
 from qgis.core import QgsProject, QgsVectorLayer
 from plugin.core.errors import TerangaError
 
@@ -14,35 +14,53 @@ class BridgeError(TerangaError):
     pass
 
 
-class _MainInvoker:
+class _MainInvoker(QObject):
+    """Exécute une fonction PyQGIS sur le thread principal via signal/slot Qt.
+
+    L'objet doit être créé sur le thread principal (celui de QGIS). Un appel
+    depuis un thread worker émet un signal connecté en `QueuedConnection` ;
+    le slot s'exécute donc sur le thread principal, qui doit faire tourner sa
+    boucle d'événements (cas normal dans QGIS).
+    """
+
+    _trigger = pyqtSignal()
+
+    def __init__(self) -> None:
+        super().__init__()
+        self._trigger.connect(self._run, Qt.QueuedConnection)
+        self._lock = threading.Lock()
+        self._fn: Callable[[], Any] | None = None
+        self._result: Any = None
+        self._error: Exception | None = None
+        self._done: threading.Event | None = None
+
     def invoke(self, fn: Callable[[], Any]) -> Any:
         app = QCoreApplication.instance()
         if app is None:
             raise RuntimeError("QCoreApplication non initialisé")
-        result: list[Any] = [None]
-        error: list[Exception | None] = [None]
-        done = threading.Event()
+        if QThread.currentThread() is self.thread():
+            return fn()
+        with self._lock:
+            self._fn = fn
+            self._result = None
+            self._error = None
+            self._done = threading.Event()
+            self._trigger.emit()
+            if not self._done.wait(timeout=30.0):
+                raise RuntimeError("Timeout invocation sur thread principal")
+            if self._error is not None:
+                raise self._error
+            return self._result
 
-        def run() -> None:
-            try:
-                result[0] = fn()
-            except Exception as e:  # noqa: BLE001
-                error[0] = e
-            finally:
-                done.set()
-
-        QTimer.singleShot(0, run)
-        # pomper les événements Qt pour que le timer s'exécute
-        i = 0
-        while not done.is_set() and i < 3000:  # 30s max
-            app.processEvents()
-            time.sleep(0.01)
-            i += 1
-        if not done.is_set():
-            raise RuntimeError("Timeout invocation sur thread principal")
-        if error[0] is not None:
-            raise error[0]
-        return result[0]
+    @pyqtSlot()
+    def _run(self) -> None:
+        try:
+            self._result = self._fn() if self._fn is not None else None
+        except Exception as e:  # noqa: BLE001
+            self._error = e
+        finally:
+            if self._done is not None:
+                self._done.set()
 
 
 def _map_units_to_str(mu) -> str:
@@ -126,6 +144,30 @@ def _get_selected_sync() -> list[dict[str, Any]]:
     return res
 
 
+def _list_tools_sync() -> list[dict[str, Any]]:
+    from plugin.geofunc.catalog import get_registry
+    registry = get_registry()
+    out: list[dict[str, Any]] = []
+    for name in registry.list():
+        cls = registry.get(name)
+        out.append({
+            'name': name,
+            'description': getattr(cls, 'description', ''),
+            'category': getattr(cls, 'category', ''),
+        })
+    return out
+
+
+def _execute_tool_sync(tool: str, params: dict[str, Any]) -> dict[str, Any]:
+    from plugin.geofunc.catalog import get_registry
+    registry = get_registry()
+    cls = registry.get(tool)
+    if cls is None:
+        raise BridgeError('tool_not_found', f'Outil introuvable : {tool}')
+    result = cls().run(params or {})
+    return result.to_dict()
+
+
 class _BridgeRequestHandler(BaseHTTPRequestHandler):
     server: "_BridgeServer"
 
@@ -171,12 +213,18 @@ class _BridgeRequestHandler(BaseHTTPRequestHandler):
         if self.path == '/v1/layers/selected':
             self._handle_selected()
             return
+        if self.path == '/v1/tools':
+            self._handle_tools_list()
+            return
         self._send_json(404, BridgeError('not_found', f'Route introuvable : {self.path}').to_dict())
 
     def do_POST(self) -> None:
         if not self._require_auth():
             return
-        self._send_json(501, BridgeError('not_implemented', 'POST non implémenté').to_dict())
+        if self.path == '/v1/tools/execute':
+            self._handle_tool_execute()
+            return
+        self._send_json(404, BridgeError('not_found', f'Route introuvable : {self.path}').to_dict())
 
     def _handle_project(self) -> None:
         try:
@@ -208,6 +256,37 @@ class _BridgeRequestHandler(BaseHTTPRequestHandler):
             self._send_json(200, {'ok': True, 'data': res})
         except Exception as e:
             self._send_json(500, BridgeError('internal', str(e)).to_dict())
+
+    def _handle_tools_list(self) -> None:
+        try:
+            res = self.server.invoker.invoke(_list_tools_sync)
+            self._send_json(200, {'ok': True, 'data': res})
+        except Exception as e:
+            self._send_json(500, BridgeError('internal', str(e)).to_dict())
+
+    def _handle_tool_execute(self) -> None:
+        try:
+            length = int(self.headers.get('Content-Length', 0) or 0)
+            raw = self.rfile.read(length) if length else b'{}'
+            payload = json.loads(raw.decode('utf-8') or '{}')
+        except Exception as e:
+            self._send_json(400, BridgeError('bad_request', f'Corps JSON invalide : {e}').to_dict())
+            return
+        tool = payload.get('tool')
+        params = payload.get('params') or {}
+        if not tool:
+            self._send_json(400, BridgeError('missing_param', "Champ 'tool' requis").to_dict())
+            return
+        try:
+            res = self.server.invoker.invoke(lambda: _execute_tool_sync(tool, params))
+        except BridgeError as e:
+            self._send_json(404, e.to_dict())
+            return
+        except Exception as e:  # noqa: BLE001
+            self._send_json(500, BridgeError('internal', str(e)).to_dict())
+            return
+        status = 200 if res.get('ok') else 400
+        self._send_json(status, res)
 
 
 class _BridgeServer(ThreadingHTTPServer):

@@ -1,14 +1,15 @@
 from __future__ import annotations
 from typing import Any
-from qgis.core import QgsProject, QgsVectorLayer, QgsLayoutExporter, QgsPrintLayout, QgsProject
+from qgis.core import QgsProject, QgsVectorLayer, QgsVectorFileWriter
 from qgis.PyQt.QtCore import QSize
 from .tool_base import GeoTool, ToolResult
+from .paths import output_path
 import os, time
 def _out_path(name: str, ext: str) -> str:
-    ts = time.strftime("%Y%m%d_%H%M%S")
-    return os.path.join(os.path.expanduser('~'), 'Documents', f"{name}_{ts}.{ext}")
+    return output_path(name, ext)
 class SaveLayer(GeoTool):
     name = "save_layer"
+    category = "output"
     def run(self, params: dict[str, Any]) -> ToolResult:
         layer = params.get('layer') or params.get('input')
         path = params.get('path') or params.get('output')
@@ -24,6 +25,7 @@ class SaveLayer(GeoTool):
         return ToolResult(ok=True,data={'path': path})
 class ExportMapPNG(GeoTool):
     name = "export_map"
+    category = "output"
     def run(self, params: dict[str, Any]) -> ToolResult:
         out = params.get('output') or _out_path('map', 'png')
         width = int(params.get('width') or 1920); height = int(params.get('height') or 1080)

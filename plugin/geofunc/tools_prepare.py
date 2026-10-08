@@ -3,44 +3,45 @@ from typing import Any
 from qgis.core import QgsProject, QgsVectorLayer
 from .tool_base import GeoTool, ToolResult
 from .processing_runner import run_processing
-import os, time
-def _out_path(name: str) -> str:
-    ts = time.strftime("%Y%m%d_%H%M%S")
-    return f"{name}_{ts}.gpkg"
+from .paths import output_path
 class ReprojectLayer(GeoTool):
     name = "reproject_layer"
+    category = "prepare"
     def run(self, params: dict[str, Any]) -> ToolResult:
         layer = params.get('layer') or params.get('input')
         target = params.get('target_crs') or params.get('crs')
         if not layer or not target: return ToolResult(ok=False,error={'code':'missing_param','message':"'layer' et 'target_crs' requis"})
         lyr = QgsProject.instance().mapLayersByName(str(layer))
         if not lyr: return ToolResult(ok=False,error={'code':'layer_not_found','message':f'Couche introuvable: {layer}'})
-        out = params.get('output') or os.path.join(os.path.expanduser('~'), 'Documents', _out_path('reprojected'))
+        out = params.get('output') or output_path('reprojected')
         res = run_processing('native:reprojectlayer', {'INPUT': lyr[0], 'TARGET_CRS': str(target), 'OUTPUT': out})
         return ToolResult(ok=True,data={'output': res.get('OUTPUT')})
 class FixGeometries(GeoTool):
     name = "fix_geometries"
+    category = "prepare"
     def run(self, params: dict[str, Any]) -> ToolResult:
         layer = params.get('layer') or params.get('input')
         if not layer: return ToolResult(ok=False,error={'code':'missing_param','message':"'layer' requis"})
         lyr = QgsProject.instance().mapLayersByName(str(layer))
         if not lyr: return ToolResult(ok=False,error={'code':'layer_not_found','message':f'Couche introuvable: {layer}'})
-        out = params.get('output') or os.path.join(os.path.expanduser('~'), 'Documents', _out_path('fixed'))
+        out = params.get('output') or output_path('fixed')
         res = run_processing('native:fixgeometries', {'INPUT': lyr[0], 'OUTPUT': out})
         return ToolResult(ok=True,data={'output': res.get('OUTPUT')})
 class RemoveDuplicates(GeoTool):
     name = "remove_duplicates"
+    category = "prepare"
     def run(self, params: dict[str, Any]) -> ToolResult:
         layer = params.get('layer') or params.get('input')
         if not layer: return ToolResult(ok=False,error={'code':'missing_param','message':"'layer' requis"})
         lyr = QgsProject.instance().mapLayersByName(str(layer))
         if not lyr: return ToolResult(ok=False,error={'code':'layer_not_found','message':f'Couche introuvable: {layer}'})
         fields = params.get('fields') or []
-        out = params.get('output') or os.path.join(os.path.expanduser('~'), 'Documents', _out_path('dedup'))
+        out = params.get('output') or output_path('dedup')
         res = run_processing('native:removeduplicatesbyattribute', {'INPUT': lyr[0], 'FIELDS': fields, 'OUTPUT': out})
         return ToolResult(ok=True,data={'output': res.get('OUTPUT')})
 class SelectByAttribute(GeoTool):
     name = "select_by_attribute"
+    category = "prepare"
     def run(self, params: dict[str, Any]) -> ToolResult:
         layer = params.get('layer') or params.get('input')
         expr = params.get('expression') or params.get('where')

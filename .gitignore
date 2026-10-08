@@ -22,6 +22,12 @@ htmlcov/
 *.zip
 *.qrc
 
+# Artefacts QGIS locaux
+symbology-style.db
+*.gpkg
+*.gpkg-journal
+teranga_smoke/
+
 # OS
 Thumbs.db
 .DS_Store
