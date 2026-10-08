@@ -6,12 +6,12 @@
 
 | Champ | Valeur |
 |---|---|
-| **Sprint courant** | S08 — Workflows métier (3 démos) |
+| **Sprint courant** | S09 — Tests et qualité (corpus golden, CI) |
 | **Statut du sprint** | À FAIRE |
 | **Tâche en cours** | — |
-| **Prochaine action** | Démarrer S08 (3 workflows métier démontrables) |
+| **Prochaine action** | Démarrer S09 (corpus golden RT2, CI) |
 | **Bloqueurs** | Tests LLM live non exécutés (clé API absente — H1) |
-| **Sprints terminés** | S00, S01, S02, S03, S04, S05, S06, S07 |
+| **Sprints terminés** | S00, S01, S02, S03, S04, S05, S06, S07, S08 |
 
 ---
 
@@ -27,7 +27,7 @@
 | S05 | Planification multi-étapes | **FAIT** | 2026-10-08 | Dry-run RT3 + orchestrateur + journal SQLite RT4 |
 | S06 | Interface QGIS (panneau chat) | **FAIT** | 2026-10-08 | ChatPanel + QThread + confirmation |
 | S07 | Sécurité et traçabilité | **FAIT** | 2026-10-08 | Sanitisation RT7 + journal lecture/export |
-| S08 | Workflows métier (3 démos) | À FAIRE | — | — |
+| S08 | Workflows métier (3 démos) | **FAIT** | 2026-10-08 | 3 workflows + runner + jeux de test documentés |
 | S09 | Tests et qualité (corpus golden, CI) | À FAIRE | — | — |
 | S10 | Release MVP | À FAIRE | — | — |
 
@@ -46,6 +46,18 @@ Légende : `À FAIRE` | `EN COURS` | `FAIT` | `BLOQUÉ`
 | S07-T2 | Exposition du journal (consultation) | À FAIRE | RT4 |
 | S07-T3 | Gestion d'erreurs homogène (bridge/agent/UI) | À FAIRE | — |
 | S07-T4 | Tests sécurité/traçabilité | À FAIRE | — |
+
+### Sprint terminé — S08 Workflows métier (3 démos)
+
+**DoD :** les trois workflows fonctionnent sur des jeux de données de test documentés.
+
+| ID | Tâche | Statut | Notes |
+|---|---|---|---|
+| S08-T1 | Accessibilité aux routes (buffer 5 km → clip villages) | FAIT | `plugin/workflows/definitions.py` |
+| S08-T2 | Nettoyage de données GPS (fix_geometries → remove_duplicates → save_layer) | FAIT | idem |
+| S08-T3 | Accessibilité aux postes de santé (distance_analysis → select_by_attribute) | FAIT | seuil 10 km (RT5) |
+| S08-T4 | Exécution en chaîne (chargement des sorties intermédiaires) | FAIT | `plugin/workflows/runner.py` |
+| S08-T5 | Jeux de données de test documentés + smoke QGIS + tests unitaires | FAIT | `tests/workflows_smoke.py` (8), `tests/test_workflows.py` (8) |
 
 ### Sprint terminé — S07 Sécurité et traçabilité
 
@@ -123,6 +135,7 @@ Légende : `À FAIRE` | `EN COURS` | `FAIT` | `BLOQUÉ`
 | 2026-10-08 | `distance_analysis` = `qgis:distancematrix` (fournisseur QGIS ; non `native:` en 3.44), champs d'identité auto | RT1, `plugin/geofunc/tools_analyze.py` |
 | 2026-10-08 | L'agent/orchestrateur s'exécute hors thread principal ; le bridge service la boucle Qt du thread principal | R6, `tests/e2e_agent_smoke.py` |
 | 2026-10-08 | Sanitisation systématique (RT7) de l'instruction et du contexte projet avant envoi au LLM (troncature 200, motifs de secrets neutralisés) | RT7, `plugin/agent/sanitization.py` |
+| 2026-10-08 | Workflows métier = plans d'outils déclaratifs (`Workflow`), exécutés en chaîne par un runner qui recharge chaque sortie dans le projet sous son nom de fichier | S08, `plugin/workflows/` |
 
 ---
 
@@ -148,3 +161,4 @@ Légende : `À FAIRE` | `EN COURS` | `FAIT` | `BLOQUÉ`
 | 2026-10-08 | Durcissement : balayage des 16 outils (QGIS), test e2e agent→orchestrateur→bridge, branchement du bridge dans le plugin ; correctifs marshalling (signal/slot Qt), `qgis:distancematrix`, sorties inscriptibles, journal thread-safe | `plugin/bridge/bridge.py`, `plugin/geofunc/*`, `plugin/agent/journal.py`, `plugin/terangagis_plugin.py`, `tests/tools_smoke.py`, `tests/e2e_agent_smoke.py`, `tests/plugin_smoke.py` |
 | 2026-10-08 | S06 terminé : interface de dialogue (ChatPanel + QThread + confirmation), formatage FR, politique de confirmation ; tests (44 pytest + smokes UI) | `plugin/ui/chat_panel.py`, `plugin/ui/formatting.py`, `plugin/agent/policy.py`, `plugin/terangagis_plugin.py`, `tests/*` |
 | 2026-10-08 | S07 terminé : sanitisation RT7, journal lecture/export, branchement sanitisation + journal dans l'agent/plugin ; tests (53 pytest + smokes QGIS) ; S08 à démarrer | `plugin/agent/sanitization.py`, `plugin/agent/journal.py`, `plugin/agent/agent.py`, `plugin/terangagis_plugin.py`, `tests/test_sanitization.py`, `tests/test_journal_read.py` |
+| 2026-10-08 | S08 terminé : 3 workflows métier (routes, nettoyage GPS, postes de santé), runner de chaînage, jeux de test documentés, exemples dans le prompt ; tests (61 pytest + 8 checks workflows) ; S09 à démarrer | `plugin/workflows/*`, `plugin/agent/prompts.py`, `tests/test_workflows.py`, `tests/workflows_smoke.py` |
