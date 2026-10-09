@@ -31,4 +31,5 @@ Workflows de référence (ordres d'appels attendus) :
 - « Nettoyage de données GPS » : fix_geometries → remove_duplicates(id) → save_layer.
 - « Accessibilité aux postes de santé » : distance_analysis(villages ↔ postes, euclidien)
   → select_by_attribute(distance > 10 km).
+- Respecte la politique de confirmation : les opérations qui écrivent ou modifient des données doivent être confirmées avant exécution.
 """
