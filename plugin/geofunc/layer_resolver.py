@@ -13,6 +13,7 @@ import os
 from typing import Any, Optional
 
 from .artifacts import Artifact, logical_name_for_path
+from .layer_matcher import LayerMeta, match_layers
 
 LAYER_PARAM_KEYS = ('layer', 'input', 'overlay', 'join', 'from', 'to')
 
@@ -85,3 +86,39 @@ def ensure_layer_in_project(value: Any, store: Any = None) -> str:
             return name
 
     raise KeyError(key)
+
+
+def resolve_best(instruction: str, store: Any = None) -> Any:
+    """Résout la meilleure couche pour une instruction (S17).
+
+    Retourne un dict {'name': ..., 'ambiguous': bool, 'candidates': [...]}.
+    Exécute sur thread principal QGIS (dépend de QgsProject).
+    """
+    from qgis.core import QgsProject, QgsVectorLayer
+
+    project = QgsProject.instance()
+    layers = []
+    for lyr in project.mapLayers().values():
+        geom = None
+        if isinstance(lyr, QgsVectorLayer):
+            gt = lyr.geometryType()
+            geom = ['Point', 'Line', 'Polygon', 'Unknown', 'Null'][gt] if 0 <= gt <= 4 else str(gt)
+        layers.append(LayerMeta(
+            name=lyr.name(),
+            geometry_type=geom,
+            crs=lyr.crs().authid() if lyr.crs().isValid() else '',
+            field_names=[f.name() for f in lyr.fields()],
+            feature_count=lyr.featureCount(),
+        ))
+    res = match_layers(instruction, layers)
+    if not res.best:
+        return {'name': None, 'ambiguous': res.ambiguous or True, 'candidates': []}
+    return {
+        'name': res.best.layer.name,
+        'ambiguous': res.ambiguous,
+        'candidates': [
+            {'name': c.layer.name, 'score': c.score, 'reasons': c.reasons}
+            for c in res.candidates
+        ],
+    }
+

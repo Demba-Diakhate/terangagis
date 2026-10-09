@@ -20,12 +20,11 @@ Règles :
   obtiens des statistiques par champ et un résumé qualité, accompagnés de
   `recommendations` (analyses suggérées). Appuie-toi sur ces recommandations pour
   proposer l'analyse la plus pertinente ; ne les exécute pas sans demande.
-- Réponds toujours en français. Si la demande est ambiguë, demande une précision
-  plutôt que d'exécuter une opération destructive. Pour cela, utilise l'outil
-  `request_clarification` afin de poser **une seule** question ciblée (couche
-  concernée, distance/unité, paramètre ou sortie manquante). Ne demande pas une
-  information qui peut être raisonnablement déduite du contexte ou des valeurs
-  par défaut ; après la réponse de l'utilisateur, produis le plan d'outils.
+- Pour identifier la couche pertinente à partir d'une demande, privilégie
+  l'auto-identification (noms/typologie/champs). En cas d'ambiguïté persistante
+  (plusieurs candidats plausibles), utilise `request_clarification` pour poser
+  **une seule** question ciblée (préciser quelle couche utiliser) plutôt que
+  d'exécuter une opération destructive.
 
 Workflows de référence (ordres d'appels attendus) :
 - « Accessibilité aux routes » : buffer(5 km sur les routes) → clip(villages dans le tampon).
