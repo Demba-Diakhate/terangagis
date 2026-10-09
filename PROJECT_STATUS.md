@@ -326,3 +326,4 @@ smokes QGIS (16 + 10 + 8 + 6 + 4 + 7 checks) — tous verts.
 | 2026-10-09 | S18 terminé : V3 étendu — politique de confirmation renforcée (niveaux/critique), intégration orchestrateur + UI (QMessageBox), guidance prompt ; tests (154 pytest) ; S19 à définir | `plugin/agent/policy.py`, `plugin/ui/chat_panel.py`, `plugin/agent/prompts.py` |
 | 2026-10-09 | S19 terminé : V3 finalisation — dialogue de confirmation structuré (niveau/outil/params) ; tests (154 pytest) ; S20 à définir | `plugin/ui/chat_panel.py` |
 | 2026-10-09 | S20 démarré : V4 Automation — workflows réutilisables (save/load JSON) ; 156 tests verts | `plugin/workflows_io.py`, `tests/test_workflows_io.py` |
+| 2026-10-09 | S20 terminé : V4 Automation — workflows réutilisables (save/load JSON) + exécution batch ; tests (157 pytest) ; S21 à définir | `plugin/workflows_io.py`, `plugin/batch.py`, `tests/test_workflows_io.py`, `tests/test_batch.py` |
