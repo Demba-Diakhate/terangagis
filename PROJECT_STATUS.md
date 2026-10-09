@@ -6,11 +6,11 @@
 
 | Champ | Valeur |
 |---|---|
-| **Sprint courant** | S21 — V4 finalisation (batch/workflows) |
-| **Sprint courant** | S21 — V4 finalisation (batch/workflows) |
+| **Sprint courant** | S22 — V5 GeoAI Sénégal (sources SEN + workflows) |
+| **Sprint courant** | S22 — V5 GeoAI Sénégal (sources SEN + workflows) |
 | **Tâche en cours** | — |
 | **Bloqueurs** | CI Docker (RT8) non exécutée localement (à valider au premier push) ; tests LLM live (clé absente — H1) |
-| **Sprints terminés** | S00, S01, S02, S03, S04, S05, S06, S07, S08, S09, S10, S11, S12, S13, S14, S15, S16, S17, S18, S19, S20, S21 |
+| **Sprints terminés** | S00, S01, S02, S03, S04, S05, S06, S07, S08, S09, S10, S11, S12, S13, S14, S15, S16, S17, S18, S19, S20, S21, S22 |
 
 ---
 
@@ -328,3 +328,4 @@ smokes QGIS (16 + 10 + 8 + 6 + 4 + 7 checks) — tous verts.
 | 2026-10-09 | S20 démarré : V4 Automation — workflows réutilisables (save/load JSON) ; 156 tests verts | `plugin/workflows_io.py`, `tests/test_workflows_io.py` |
 | 2026-10-09 | S20 terminé : V4 Automation — workflows réutilisables (save/load JSON) + exécution batch ; tests (157 pytest) ; S21 à définir | `plugin/workflows_io.py`, `plugin/batch.py`, `tests/test_workflows_io.py`, `tests/test_batch.py` |
 | 2026-10-09 | S21 terminé : V4 finalisation — batch (items + summary, gestion erreurs) ; 157 tests verts ; V4 clôturé | `plugin/batch.py`, `tests/test_batch.py` |
+| 2026-10-09 | S22 démarré : V5 GeoAI Sénégal — catalogue senegal_sources.json + senegal_catalog.py + test ; 158 tests verts | `plugin/data/senegal_sources.json`, `plugin/senegal_catalog.py`, `tests/test_senegal_catalog.py` |

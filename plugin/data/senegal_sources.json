@@ -1,0 +1,32 @@
+{
+  "region": "Sénégal",
+  "sources": [
+    {
+      "id": "sen_communes",
+      "name": "Communes du Sénégal",
+      "type": "vector",
+      "geometry": "Polygon",
+      "description": "Limites administratives communales (référence)",
+      "keywords": ["commune", "administratif", "limite"],
+      "suggested_crs": "EPSG:32628"
+    },
+    {
+      "id": "sen_routes",
+      "name": "Réseau routier du Sénégal",
+      "type": "vector",
+      "geometry": "Line",
+      "description": "Réseau routier principal",
+      "keywords": ["route", "routier", "réseau"],
+      "suggested_crs": "EPSG:32628"
+    },
+    {
+      "id": "sen_hydro",
+      "name": "Cours d'eau du Sénégal",
+      "type": "vector",
+      "geometry": "Line",
+      "description": "Hydrographie principale",
+      "keywords": ["cours", "eau", "hydro"],
+      "suggested_crs": "EPSG:32628"
+    }
+  ]
+}
