@@ -6,6 +6,8 @@ tournent dans un thread worker pour ne pas bloquer QGIS (règle R6).
 """
 from __future__ import annotations
 
+import threading
+
 from qgis.PyQt.QtCore import QThread, pyqtSignal
 from qgis.PyQt.QtWidgets import (QHBoxLayout, QLabel, QMessageBox, QPlainTextEdit,
                                  QPushButton, QVBoxLayout, QWidget)
@@ -39,22 +41,33 @@ class _PlanWorker(QThread):
 class _ExecWorker(QThread):
     finished_report = pyqtSignal(object, object)
     failed = pyqtSignal(str)
+    step_started = pyqtSignal(int, int, str)
 
-    def __init__(self, orchestrator, plan, layer_crs=None, protected_sources=None, options=None) -> None:
+    def __init__(self, orchestrator, plan, layer_crs=None, protected_sources=None,
+                 options=None, cancel_event=None) -> None:
         super().__init__()
         self.orchestrator = orchestrator
         self.plan = plan
         self.layer_crs = layer_crs
         self.protected_sources = protected_sources
         self.options = dict(options or {})
+        self.cancel_event = cancel_event
+        self.total = len(getattr(plan, 'steps', []) or [])
+
+    def _on_step_start(self, index, step) -> None:
+        self.step_started.emit(int(index), self.total, getattr(step, 'tool', '?'))
 
     def run(self) -> None:  # noqa: D401
+        options = dict(self.options)
+        options.setdefault('on_step_start', self._on_step_start)
+        if self.cancel_event is not None:
+            options.setdefault('should_cancel', self.cancel_event.is_set)
         try:
             report, exec_report = self.orchestrator.run(
                 self.plan,
                 layer_crs=self.layer_crs,
                 protected_sources=self.protected_sources,
-                **self.options,
+                **options,
             )
         except Exception as e:  # noqa: BLE001
             self.failed.emit(str(e))
@@ -95,6 +108,8 @@ class ChatPanel(QWidget):
         self._worker = None
         self._instruction = ''
         self._repaired_once = False
+        self._cancel_event = threading.Event()
+        self.progress_log = []
         self._build_ui()
 
     def _build_ui(self) -> None:
@@ -115,6 +130,11 @@ class ChatPanel(QWidget):
         self.send_button = QPushButton("Envoyer")
         self.send_button.clicked.connect(self.submit)
         row.addWidget(self.send_button)
+
+        self.cancel_button = QPushButton("Annuler")
+        self.cancel_button.setEnabled(False)
+        self.cancel_button.clicked.connect(self.cancel)
+        row.addWidget(self.cancel_button)
         layout.addLayout(row)
 
         self.status = QLabel("Prêt.")
@@ -131,6 +151,9 @@ class ChatPanel(QWidget):
             return
         self.input.clear()
         self.send_button.setEnabled(False)
+        self.cancel_button.setEnabled(False)
+        self._cancel_event.clear()
+        self.progress_log = []
         self._repaired_once = False
         self._instruction = instruction
         self._append(f"Vous : {instruction}")
@@ -199,16 +222,38 @@ class ChatPanel(QWidget):
             self._append("Orchestrateur indisponible.")
             self._reset()
             return
+        self._cancel_event = threading.Event()
         self.status.setText("Exécution…")
+        self.cancel_button.setEnabled(True)
         options = getattr(self, 'orchestrator_defaults', None) or {}
-        self._worker = _ExecWorker(orchestrator, plan, options=options)
+        self._worker = _ExecWorker(
+            orchestrator, plan, options=options, cancel_event=self._cancel_event,
+        )
+        self._worker.step_started.connect(self._on_step_started)
         self._worker.finished_report.connect(self._on_executed)
         self._worker.failed.connect(self._on_failed)
         self._worker.start()
 
+    def _on_step_started(self, index: int, total: int, tool: str) -> None:
+        self.progress_log.append((index, total, tool))
+        self.status.setText(f"Exécution… étape {index + 1}/{total} : {tool}")
+
+    def cancel(self) -> None:
+        """Demande l'annulation de l'exécution en cours (S14)."""
+        worker = getattr(self, '_worker', None)
+        if worker is None or not worker.isRunning():
+            return
+        self._cancel_event.set()
+        self.cancel_button.setEnabled(False)
+        self.status.setText("Annulation demandée…")
+
     def _on_executed(self, report, exec_report) -> None:
         self._append(format_execution(exec_report))
         self.conversation.add_execution(exec_report)
+        if getattr(exec_report, 'cancelled', False):
+            self._append("Exécution annulée.")
+            self._reset()
+            return
         if not exec_report.ok and getattr(exec_report, 'recoverable', False) and not self._repaired_once:
             self._attempt_repair(exec_report)
             return
@@ -270,4 +315,5 @@ class ChatPanel(QWidget):
 
     def _reset(self) -> None:
         self.send_button.setEnabled(True)
+        self.cancel_button.setEnabled(False)
         self.status.setText("Prêt.")

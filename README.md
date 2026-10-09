@@ -2,7 +2,7 @@
 
 Agent GeoAI pour QGIS : réalise des tâches SIG à partir d'instructions en langage naturel.
 
-> **Statut du projet : MVP livré (S00–S10, version 1.0.0) ; V2 « Workflow Agent » en cours (S13)** — voir [`PROJECT_STATUS.md`](PROJECT_STATUS.md)
+> **Statut du projet : MVP livré (S00–S10, version 1.0.0) ; V2 « Workflow Agent » en cours (S14)** — voir [`PROJECT_STATUS.md`](PROJECT_STATUS.md)
 > **Document de référence :** cahier des charges combiné V2.0 (`../TerangaGIS_Cahier_des_charges_Combine_V2.md`)
 > **Guide utilisateur :** [`docs/guide_utilisateur.md`](docs/guide_utilisateur.md)
 
@@ -45,6 +45,15 @@ Les erreurs sont classées `transient` / `permanent` (`plugin/agent/retry.py`) :
   (`Orchestrator.resume`), l'interface propose **une seule** correction LLM de l'étape
   (`GeoAgent.repair`), ré-exécutée après accord de l'utilisateur. Aucune boucle automatique.
 - La mémoire de conversation ne vit que pendant la session du panneau (aucune persistance).
+
+## Contrôle d'exécution (S14)
+
+- **Progression** : l'orchestrateur notifie le début et la fin de chaque étape
+  (`on_step_start` / `on_step_finished`) ; le panneau affiche « étape i/n : outil ».
+- **Annulation** : le bouton **Annuler** du panneau pose un drapeau (`should_cancel`)
+  vérifié par l'orchestrateur **entre les étapes** (et entre deux tentatives). L'arrêt
+  est coopératif — une étape Processing déjà lancée va jusqu'au bout — puis le rapport
+  porte `cancelled=True` et l'interface affiche « Exécution annulée. ».
 
 ## Prérequis
 

@@ -52,7 +52,9 @@ class Conversation:
     def add_execution(self, exec_report: Any) -> None:
         steps = getattr(exec_report, 'steps', None) or []
         produced = self._collect_artifacts(steps)
-        if getattr(exec_report, 'ok', False):
+        if getattr(exec_report, 'cancelled', False):
+            parts = [f"Exécution annulée par l'utilisateur ({len(steps)} étape(s) exécutée(s))"]
+        elif getattr(exec_report, 'ok', False):
             parts = [f'Exécution réussie ({len(steps)} étape(s))']
         else:
             failed = getattr(exec_report, 'failed_step', None)

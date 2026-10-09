@@ -6,12 +6,12 @@
 
 | Champ | Valeur |
 |---|---|
-| **Sprint courant** | S13 — Mémoire de conversation + reprise contrôlée (V2 Workflow Agent) |
+| **Sprint courant** | S14 — Contrôle d'exécution : progression + annulation (V2 Workflow Agent) |
 | **Statut du sprint** | **FAIT** |
 | **Tâche en cours** | — |
-| **Prochaine action** | Démarrer S14 — (à définir selon roadmap CDC §30) |
+| **Prochaine action** | Démarrer S15 — (à définir selon roadmap CDC §30) |
 | **Bloqueurs** | CI Docker (RT8) non exécutée localement (à valider au premier push) ; tests LLM live (clé absente — H1) |
-| **Sprints terminés** | S00, S01, S02, S03, S04, S05, S06, S07, S08, S09, S10, S11, S12, S13 |
+| **Sprints terminés** | S00, S01, S02, S03, S04, S05, S06, S07, S08, S09, S10, S11, S12, S13, S14 |
 
 ---
 
@@ -38,12 +38,33 @@
 | S11 | Réutilisation des sorties intermédiaires | **FAIT** | 2026-10-09 | Registre d'artefacts + résolution par nom dans le bridge |
 | S12 | Exécution robuste : retries + erreurs | **FAIT** | 2026-10-09 | Classification transient/permanent, `on_error`, backoff, retry de parsing |
 | S13 | Mémoire de conversation + reprise | **FAIT** | 2026-10-09 | `Conversation` (session) + `resume` + correction LLM (1 essai) confirmée |
+| S14 | Contrôle d'exécution : progression + annulation | **FAIT** | 2026-10-09 | Callbacks de progression + annulation coopérative (`should_cancel`) |
 
 Légende : `À FAIRE` | `EN COURS` | `FAIT` | `BLOQUÉ`
 
 ---
 
-## Détail du sprint courant — S13 Mémoire de conversation + reprise contrôlée
+## Détail du sprint courant — S14 Contrôle d'exécution : progression + annulation
+
+**Objectif :** pendant l'exécution multi-étapes, notifier la progression (étape en cours)
+et permettre à l'utilisateur d'**annuler** une exécution en cours.
+
+**DoD :** l'orchestrateur notifie début/fin d'étape ; l'annulation est possible entre les
+étapes (et entre deux tentatives), jamais au milieu d'une étape Processing ; le rapport
+porte `cancelled` ; l'interface affiche la progression et le bouton Annuler ; tests verts.
+
+| ID | Tâche | Statut | Notes |
+|---|---|---|---|
+| S14-T1 | Callbacks de progression (`on_step_start`, `on_step_finished`) | FAIT | `plugin/agent/orchestrator.py` |
+| S14-T2 | Annulation coopérative (`should_cancel`, `ExecutionReport.cancelled`) | FAIT | `plugin/agent/orchestrator.py` (`run`, `_run_step`) |
+| S14-T3 | Affichage « exécution annulée » | FAIT | `plugin/ui/formatting.py` (`format_execution`) |
+| S14-T4 | Branchement panneau chat (`Annuler`, `progress_log`, statut étape i/n) | FAIT | `plugin/ui/chat_panel.py` (`_ExecWorker.step_started`, `cancel`, `_on_step_started`) |
+| S14-T5 | Tests | FAIT | `tests/test_orchestrator_control.py` (5), `tests/execution_control_smoke.py` (5), test annulation dans `tests/test_conversation.py` |
+
+**Bilan des tests S14 :** 120 pytest verts ; smokes QGIS : execution_control 5/5, chat 4/4,
+conversation 4/4, recovery 3/3, artifacts 11/11, bridge 10/10, tools 16/16, workflows 8/8, e2e 7/7, plugin 6/6 — tous verts.
+
+### Sprint terminé — S13 Mémoire de conversation + reprise contrôlée
 
 **Objectif :** mémoriser la conversation de session (tours + artefacts) pour permettre les
 demandes de suivi, et offrir une reprise contrôlée d'une étape échouée via une correction
@@ -247,6 +268,8 @@ smokes QGIS (16 + 10 + 8 + 6 + 4 + 7 checks) — tous verts.
 | 2026-10-09 | Réutilisation des sorties intermédiaires : registre d'artefacts **côté bridge** (durée = session), résolution des entrées par nom (artefact → projet → chemin) et ajout des couches produites au projet QGIS ; sortie nommable via `output` (nom logique) | V2/S11, `plugin/geofunc/artifacts.py`, `plugin/geofunc/layer_resolver.py`, `plugin/bridge/bridge.py` |
 | 2026-10-09 | Exécution robuste : erreurs classées `transient`/`permanent`/`unknown` ; politique `on_error` (`stop`/`continue`) et retries (backoff exponentiel) **par étape** ; retry de parsing du plan côté agent ; erreurs LLM non-réessables (4xx) vs réessables (429/5xx/timeout) avec `Retry-After` | V2/S12, `plugin/agent/retry.py`, `plugin/agent/orchestrator.py`, `plugin/agent/agent.py`, `plugin/agent/llm.py` |
 | 2026-10-09 | Mémoire de conversation **limitée à la session** (aucune persistance) ; reprise d'une étape échouée = **une seule** correction LLM proposée puis confirmée par l'utilisateur (pas de boucle automatique) ; `recoverable` ne concerne que les erreurs `transient`/`unknown` | V2/S13, `plugin/agent/conversation.py`, `plugin/agent/orchestrator.py`, `plugin/agent/agent.py`, `plugin/ui/chat_panel.py` |
+| 2026-10-09 | Contrôle d'exécution : progression notifiée par callbacks (`on_step_start`/`on_step_finished`) ; annulation **coopérative** (`should_cancel` vérifié entre étapes et avant chaque tentative), jamais au milieu d'une étape Processing ; `ExecutionReport.cancelled` | V2/S14, `plugin/agent/orchestrator.py`, `plugin/ui/chat_panel.py` |
+| 2026-10-09 | Annulation d'exécution **coopérative** : l'orchestrateur consulte `should_cancel` entre les étapes (et avant chaque retry), jamais au milieu d'une étape Processing ; `ExecutionReport.cancelled` distingue l'annulation de l'échec | V2/S14, `plugin/agent/orchestrator.py`, `plugin/ui/chat_panel.py` |
 
 ---
 
@@ -279,3 +302,4 @@ smokes QGIS (16 + 10 + 8 + 6 + 4 + 7 checks) — tous verts.
 | 2026-10-09 | S11 terminé (V2 démarré) : réutilisation des sorties intermédiaires par nom — registre d'artefacts (bridge), résolution de couche + ajout au projet, `GET /v1/artifacts`, prompt de nommage ; tests (83 pytest + smoke artifacts 11/11) ; S12 à démarrer | `plugin/geofunc/artifacts.py`, `plugin/geofunc/layer_resolver.py`, `plugin/bridge/bridge.py`, `plugin/agent/prompts.py`, `tests/test_artifacts.py`, `tests/artifacts_smoke.py`, `README.md`, `docs/architecture.md` |
 | 2026-10-09 | S12 terminé : exécution robuste — classification d'erreurs + backoff, `on_error`/retries par étape, `ExecutionReport` enrichi, retry de parsing du plan, client LLM `retryable`/`Retry-After`, config ; tests (101 pytest + smokes QGIS) ; S13 à démarrer | `plugin/agent/retry.py`, `plugin/agent/orchestrator.py`, `plugin/agent/agent.py`, `plugin/agent/llm.py`, `plugin/agent/journal.py`, `plugin/ui/chat_panel.py`, `plugin/terangagis_plugin.py`, `common/config.py`, `.env.example`, `tests/test_retry.py`, `tests/test_orchestrator_retry.py`, `tests/test_llm_retry.py` |
 | 2026-10-09 | S13 terminé : mémoire de conversation de session (`Conversation`) injectée dans la planification, reprise d'exécution (`Orchestrator.resume`) et correction LLM unique (`GeoAgent.repair`) confirmée par l'utilisateur ; tests (114 pytest + smokes conversation 4/4, recovery 3/3) ; S14 à démarrer | `plugin/agent/conversation.py`, `plugin/agent/agent.py`, `plugin/agent/orchestrator.py`, `plugin/ui/chat_panel.py`, `tests/test_conversation.py`, `tests/test_resume.py`, `tests/test_repair.py`, `tests/conversation_smoke.py`, `tests/recovery_smoke.py`, `README.md`, `docs/architecture.md` |
+| 2026-10-09 | S14 terminé : contrôle d'exécution — progression par étape (`on_step_start`/`on_step_finished`) et annulation coopérative (`should_cancel`, bouton Annuler, `ExecutionReport.cancelled`) ; tests (120 pytest + smoke execution_control 5/5) ; S15 à démarrer | `plugin/agent/orchestrator.py`, `plugin/agent/conversation.py`, `plugin/ui/chat_panel.py`, `plugin/ui/formatting.py`, `tests/test_orchestrator_control.py`, `tests/execution_control_smoke.py`, `README.md`, `docs/architecture.md` |

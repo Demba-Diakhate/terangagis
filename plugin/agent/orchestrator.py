@@ -45,6 +45,7 @@ class ExecutionReport:
     steps: List[StepResult] = field(default_factory=list)
     stopped_on_error: bool = False
     failed_index: Optional[int] = None
+    cancelled: bool = False
 
     @property
     def ok(self) -> bool:
@@ -85,6 +86,9 @@ class Orchestrator:
         max_retries: int = 1,
         backoff_base: float = 0.5,
         sleep: Callable[[float], None] | None = None,
+        on_step_start: Callable[[int, AgentStep], None] | None = None,
+        on_step_finished: Callable[[int, StepResult], None] | None = None,
+        should_cancel: Callable[[], bool] | None = None,
     ) -> tuple[ValidationReport, ExecutionReport]:
         """Exécute le plan.
 
@@ -93,6 +97,11 @@ class Orchestrator:
           `AgentStep.on_error`.
         - `max_retries` : retries supplémentaires par étape pour une erreur
           transitoire (surchargeable via `AgentStep.max_retries`).
+        - `on_step_start` / `on_step_finished` : notifications de progression (S14).
+        - `should_cancel` : si fourni, vérifié **avant chaque étape** (et entre deux
+          tentatives) ; s'il renvoie vrai, l'exécution s'arrête proprement et le
+          rapport porte `cancelled=True`. L'annulation n'est pas instantanée au
+          sein d'un algorithme de traitement.
         """
         report = validate_plan(plan, layer_crs=layer_crs, protected_sources=protected_sources)
         if self.journal:
@@ -107,6 +116,14 @@ class Orchestrator:
 
         exec_report = ExecutionReport()
         for index, step in enumerate(plan.steps):
+            if should_cancel is not None and should_cancel():
+                exec_report.cancelled = True
+                exec_report.stopped_on_error = True
+                break
+
+            if on_step_start is not None:
+                on_step_start(index, step)
+
             if on_confirm is not None and not on_confirm(index, step):
                 exec_report.stopped_on_error = True
                 exec_report.failed_index = index
@@ -116,16 +133,19 @@ class Orchestrator:
             step_retries = step.max_retries if step.max_retries is not None else max_retries
             max_attempts = max(1, 1 + int(step_retries))
 
-            result, ok, attempts = self._run_step(step, max_attempts, backoff_base, sleep_fn)
+            result, ok, attempts = self._run_step(
+                step, max_attempts, backoff_base, sleep_fn, should_cancel,
+            )
             error_class = '' if ok else classify_error((result or {}).get('error'))
 
-            exec_report.steps.append(
-                StepResult(step.tool, step.params, ok, result, attempts, error_class)
-            )
+            step_result = StepResult(step.tool, step.params, ok, result, attempts, error_class)
+            exec_report.steps.append(step_result)
             if self.journal:
                 self.journal.record_execution(
                     step.tool, step.params, result, attempts=attempts, error_class=error_class,
                 )
+            if on_step_finished is not None:
+                on_step_finished(index, step_result)
 
             if not ok:
                 exec_report.failed_index = index
@@ -163,6 +183,7 @@ class Orchestrator:
         max_attempts: int,
         backoff_base: float,
         sleep_fn: Callable[[float], None],
+        should_cancel: Callable[[], bool] | None = None,
     ) -> tuple[Dict[str, Any], bool, int]:
         attempt = 0
         result: Dict[str, Any] = {'ok': False, 'error': {'code': 'client_error', 'message': 'Échec inconnu'}}
@@ -178,6 +199,8 @@ class Orchestrator:
             if ok or attempt >= max_attempts:
                 break
             if classify_error(result.get('error')) != TRANSIENT:
+                break
+            if should_cancel is not None and should_cancel():
                 break
             sleep_fn(backoff_seconds(attempt, backoff_base))
         return result, ok, attempt

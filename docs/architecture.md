@@ -115,6 +115,22 @@ Panneau chat (plugin/ui/chat_panel.py)
 - `plugin/ui/chat_panel.py` : `_RepairWorker` + `_on_repaired` ; la reprise est proposée
   une seule fois (`_repaired_once`), jamais automatique.
 
+## Contrôle d'exécution — progression et annulation (S14 — V2)
+
+```text
+Panneau chat (plugin/ui/chat_panel.py)
+    ├─ _ExecWorker (QThread) → Orchestrator.run(on_step_start, should_cancel)
+    │      ├─ step_started(index, total, outil) → statut « étape i/n : outil »
+    │      └─ cancel_event (threading.Event) → should_cancel() (lu par l'orchestrateur)
+    └─ bouton « Annuler » → cancel() → cancel_event.set()
+```
+
+- `plugin/agent/orchestrator.py` : `run(..., on_step_start, on_step_finished, should_cancel)`
+  et `ExecutionReport.cancelled`. L'annulation est **coopérative** : vérifiée entre les
+  étapes et avant chaque nouvelle tentative, jamais au milieu d'une étape Processing.
+- `plugin/ui/chat_panel.py` : `_ExecWorker.step_started` + `cancel()` ; `format_execution`
+  affiche « (exécution annulée par l'utilisateur) ».
+
 ## Conventions de code
 - Aucune dépendance externe dans `plugin/` au-delà de ce que QGIS embarque.
 - `common/` ne doit jamais importer `qgis.*` (permet les tests sans QGIS).

@@ -46,6 +46,8 @@ def format_execution(report: Any) -> str:
         else:
             error = (step.result or {}).get('error') or {}
             lines.append(f"{i}. {step.tool} : ÉCHEC — {error.get('message', 'inconnu')}")
-    if getattr(report, 'stopped_on_error', False):
+    if getattr(report, 'cancelled', False):
+        lines.append("(exécution annulée par l'utilisateur)")
+    elif getattr(report, 'stopped_on_error', False):
         lines.append("(exécution interrompue après une erreur)")
-    return "Résultats :\n" + "\n".join(lines)
+    return "Résultats :\n" + "\n".join(lines) if lines else "Résultats :\n(aucune étape exécutée)"

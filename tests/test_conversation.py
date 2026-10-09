@@ -49,6 +49,17 @@ def test_failed_execution_is_summarized():
     assert 'buffer' in conv.messages()[0]['content']
 
 
+def test_cancelled_execution_is_summarized():
+    from plugin.agent.conversation import Conversation
+
+    conv = Conversation()
+    report = ExecutionReport(steps=[_step('buffer', artifact='routes_buffer')], cancelled=True)
+    conv.add_execution(report)
+    content = conv.messages()[0]['content']
+    assert 'annulée' in content
+    assert 'routes_buffer' in content
+
+
 def test_budget_keeps_most_recent_turns():
     from plugin.agent.conversation import Conversation
 
