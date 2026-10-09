@@ -49,3 +49,19 @@ def test_format_execution_mixed():
 def test_format_execution_stopped():
     report = _Exec(steps=[_Step('buffer', False, {'error': {'message': 'x'}})], stopped_on_error=True)
     assert 'interrompue' in format_execution(report)
+
+
+def test_format_execution_profile_summary():
+    from plugin.geofunc.profiling import profile_layer
+    profile = profile_layer(['id'], {'id': [1, 2]}, geometry_type='Point', crs='EPSG:32628', feature_count=2)
+    result = {
+        'ok': True,
+        'data': {
+            'profile': profile,
+            'recommendations': [{'code': 'x', 'title': 'T', 'reason': 'R', 'tools': [], 'priority': 1}],
+        },
+    }
+    report = _Exec(steps=[_Step('get_layer_info', True, result)])
+    text = format_execution(report)
+    assert 'Profil :' in text
+    assert 'Recommandations :' in text

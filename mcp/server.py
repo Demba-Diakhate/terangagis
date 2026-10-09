@@ -21,7 +21,7 @@ SERVER_VERSION = "0.1.0"
 TOOL_SCHEMAS: dict[str, dict[str, Any]] = {
     "get_project_info": {"description": "Informations sur le projet QGIS courant", "properties": {}},
     "list_layers": {"description": "Liste des couches du projet", "properties": {}},
-    "get_layer_info": {"description": "Détails d'une couche", "properties": {"name": {"type": "string"}}, "required": ["name"]},
+    "get_layer_info": {"description": "Détails d'une couche (option `profile` : statistiques élémentaires et qualité)", "properties": {"name": {"type": "string"}, "profile": {"type": "boolean", "description": "Inclure un profil de données (statistiques par champ + résumé qualité)"}}, "required": ["name"]},
     "get_selected_features": {"description": "Entités sélectionnées par couche", "properties": {}},
     "reproject_layer": {"description": "Reprojette une couche vers un CRS cible", "properties": {"layer": {"type": "string"}, "target_crs": {"type": "string"}, "output": {"type": "string", "description": "Nom logique ou chemin de sortie (ex. 'routes_utm')"}}, "required": ["layer", "target_crs"]},
     "fix_geometries": {"description": "Corrige les géométries invalides", "properties": {"layer": {"type": "string"}, "output": {"type": "string", "description": "Nom logique ou chemin de sortie"}}, "required": ["layer"]},

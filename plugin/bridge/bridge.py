@@ -108,7 +108,7 @@ def _get_layers_list_sync() -> list[dict[str, Any]]:
     return out
 
 
-def _get_layer_info_sync(name: str) -> dict[str, Any] | None:
+def _get_layer_info_sync(name: str, profile: bool = False) -> dict[str, Any] | None:
     proj = QgsProject.instance()
     layers = proj.mapLayersByName(name)
     if not layers:
@@ -123,7 +123,7 @@ def _get_layer_info_sync(name: str) -> dict[str, Any] | None:
     if isinstance(lyr, QgsVectorLayer):
         gt = lyr.geometryType()
         geom_str = ['Point', 'Line', 'Polygon', 'Unknown', 'Null'][gt] if 0 <= gt <= 4 else str(gt)
-    return {
+    info = {
         'name': lyr.name(),
         'id': lyr.id(),
         'crs': crs_auth,
@@ -133,6 +133,12 @@ def _get_layer_info_sync(name: str) -> dict[str, Any] | None:
         'extent': {'xmin': bbox.xMinimum(), 'ymin': bbox.yMinimum(), 'xmax': bbox.xMaximum(), 'ymax': bbox.yMaximum()},
         'source': lyr.source(),
     }
+    if profile and isinstance(lyr, QgsVectorLayer):
+        from plugin.geofunc.qgis_profile import layer_profile
+        prof = layer_profile(lyr)
+        if prof is not None:
+            info['profile'] = prof
+    return info
 
 
 def _get_selected_sync() -> list[dict[str, Any]]:
@@ -216,6 +222,15 @@ def _execute_tool_sync(tool: str, params: dict[str, Any], store: Any = None) -> 
 
     payload = cls().run(call_params).to_dict()
 
+    if tool == 'get_layer_info' and payload.get('ok') and payload.get('data'):
+        data = payload['data']
+        if data.get('profile'):
+            try:
+                from plugin.agent.recommend import recommend
+                data['recommendations'] = recommend(data['profile'])
+            except Exception:  # noqa: BLE001
+                pass
+
     if store is not None and payload.get('ok') and payload.get('data'):
         data = payload['data']
         produced = data.get('output') or data.get('path')
@@ -255,28 +270,30 @@ class _BridgeRequestHandler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:
         if not self._require_auth():
             return
-        if self.path == '/health':
+        path, _, query = self.path.partition('?')
+        if path == '/health':
             self._send_json(200, {'ok': True, 'service': 'terangagis-bridge'})
             return
-        if self.path == '/v1/project':
+        if path == '/v1/project':
             self._handle_project()
             return
-        if self.path == '/v1/layers':
+        if path == '/v1/layers':
             self._handle_layers()
             return
-        if self.path.startswith('/v1/layers/') and self.path.endswith('/info'):
-            name = self.path[len('/v1/layers/'):-len('/info')]
+        if path.startswith('/v1/layers/') and path.endswith('/info'):
+            name = path[len('/v1/layers/'):-len('/info')]
             if name.startswith('/'):
                 name = name[1:]
-            self._handle_layer_info(name)
+            profile = 'profile=1' in query or 'profile=true' in query
+            self._handle_layer_info(name, profile)
             return
-        if self.path == '/v1/layers/selected':
+        if path == '/v1/layers/selected':
             self._handle_selected()
             return
-        if self.path == '/v1/tools':
+        if path == '/v1/tools':
             self._handle_tools_list()
             return
-        if self.path == '/v1/artifacts':
+        if path == '/v1/artifacts':
             self._handle_artifacts()
             return
         self._send_json(404, BridgeError('not_found', f'Route introuvable : {self.path}').to_dict())
@@ -303,12 +320,18 @@ class _BridgeRequestHandler(BaseHTTPRequestHandler):
         except Exception as e:
             self._send_json(500, BridgeError('internal', str(e)).to_dict())
 
-    def _handle_layer_info(self, name: str) -> None:
+    def _handle_layer_info(self, name: str, profile: bool = False) -> None:
         try:
-            res = self.server.invoker.invoke(lambda: _get_layer_info_sync(name))
+            res = self.server.invoker.invoke(lambda: _get_layer_info_sync(name, profile))
             if res is None:
                 self._send_json(404, BridgeError('layer_not_found', f'Couche introuvable : {name}').to_dict())
                 return
+            if profile and res.get('profile'):
+                try:
+                    from plugin.agent.recommend import recommend
+                    res['recommendations'] = recommend(res['profile'])
+                except Exception:  # noqa: BLE001
+                    pass
             self._send_json(200, {'ok': True, 'data': res})
         except Exception as e:
             self._send_json(500, BridgeError('internal', str(e)).to_dict())

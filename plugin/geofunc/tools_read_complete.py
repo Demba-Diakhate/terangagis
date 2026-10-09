@@ -7,6 +7,11 @@ def _map_units(mu):
     try: return mu.name
     except Exception: return str(mu)
 
+def _truthy(value):
+    if isinstance(value, str):
+        return value.strip().lower() in ('1', 'true', 'oui', 'yes', 'on')
+    return bool(value)
+
 class GetProjectInfo(GeoTool):
     name = "get_project_info"
     category = "read"
@@ -53,7 +58,13 @@ class GetLayerInfo(GeoTool):
         geom='Unknown'
         if isinstance(lyr0,QgsVectorLayer):
             gt=lyr0.geometryType(); geom=['Point','Line','Polygon','Unknown','Null'][gt] if 0<=gt<=4 else str(gt)
-        return ToolResult(ok=True,data={'name':lyr0.name(),'crs':lyr0.crs().authid() if lyr0.crs().isValid() else '','feature_count':lyr0.featureCount(),'fields':fields,'extent':{'xmin':bbox.xMinimum(),'ymin':bbox.yMinimum(),'xmax':bbox.xMaximum(),'ymax':bbox.yMaximum()},'geometry_type':geom})
+        data={'name':lyr0.name(),'crs':lyr0.crs().authid() if lyr0.crs().isValid() else '','feature_count':lyr0.featureCount(),'fields':fields,'extent':{'xmin':bbox.xMinimum(),'ymin':bbox.yMinimum(),'xmax':bbox.xMaximum(),'ymax':bbox.yMaximum()},'geometry_type':geom}
+        if _truthy(params.get('profile')) and isinstance(lyr0, QgsVectorLayer):
+            from .qgis_profile import layer_profile
+            prof = layer_profile(lyr0)
+            if prof is not None:
+                data['profile'] = prof
+        return ToolResult(ok=True, data=data)
 
 class GetSelectedFeatures(GeoTool):
     name = "get_selected_features"

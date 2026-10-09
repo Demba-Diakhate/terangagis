@@ -33,6 +33,19 @@ def format_validation(report: Any) -> str:
     return "Validation :\n" + "\n".join(lines)
 
 
+def _step_detail(tool: str, data: Any) -> str:
+    """Détail compact d'une étape (profil + recommandations pour S16)."""
+    if isinstance(data, dict) and data.get('profile'):
+        from plugin.geofunc.profiling import summarise_profile
+        from plugin.agent.recommend import summarise_recommendations
+        parts = [' — ' + summarise_profile(data['profile'])]
+        recs = summarise_recommendations(data.get('recommendations') or [])
+        if recs:
+            parts.append(recs)
+        return '\n'.join(parts)
+    return f" — {data}" if data else ''
+
+
 def format_execution(report: Any) -> str:
     steps = getattr(report, 'steps', [])
     if not steps:
@@ -41,7 +54,7 @@ def format_execution(report: Any) -> str:
     for i, step in enumerate(steps, 1):
         if step.ok:
             data = step.result.get('data') if step.result else None
-            detail = f" — {data}" if data else ''
+            detail = _step_detail(step.tool, data)
             lines.append(f"{i}. {step.tool} : OK{detail}")
         else:
             error = (step.result or {}).get('error') or {}
