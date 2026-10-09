@@ -158,14 +158,74 @@ def _list_tools_sync() -> list[dict[str, Any]]:
     return out
 
 
-def _execute_tool_sync(tool: str, params: dict[str, Any]) -> dict[str, Any]:
+def _artifact_meta(path: str) -> dict[str, Any]:
+    """Métadonnées d'une couche produite (vide si non vecteur / illisible)."""
+    try:
+        lyr = QgsVectorLayer(str(path), 'teranga_meta', 'ogr')
+        if not lyr.isValid():
+            return {}
+        gt = lyr.geometryType()
+        geom = ['Point', 'Line', 'Polygon', 'Unknown', 'Null'][gt] if 0 <= gt <= 4 else 'Unknown'
+        return {
+            'crs': lyr.crs().authid() if lyr.crs().isValid() else '',
+            'geometry_type': geom,
+            'feature_count': lyr.featureCount(),
+        }
+    except Exception:  # noqa: BLE001
+        return {}
+
+
+def _execute_tool_sync(tool: str, params: dict[str, Any], store: Any = None) -> dict[str, Any]:
+    """Exécute un outil en résolvant les entrées/sorties par nom (S11).
+
+    - les paramètres de couche (`layer`, `input`, `overlay`, `join`, `from`, `to`)
+      sont résolus via les artefacts de session puis le projet ;
+    - un `output`/`path` fourni comme nom logique est matérialisé en chemin horodaté ;
+    - la sortie produite est enregistrée comme artefact et ajoutée au projet.
+    """
+    from plugin.geofunc.artifacts import logical_name_for_path, looks_like_path
     from plugin.geofunc.catalog import get_registry
+    from plugin.geofunc.layer_resolver import (
+        LAYER_PARAM_KEYS,
+        add_artifact_to_project,
+        ensure_layer_in_project,
+    )
+    from plugin.geofunc.paths import output_path
+
     registry = get_registry()
     cls = registry.get(tool)
     if cls is None:
         raise BridgeError('tool_not_found', f'Outil introuvable : {tool}')
-    result = cls().run(params or {})
-    return result.to_dict()
+
+    call_params = dict(params or {})
+
+    for key in LAYER_PARAM_KEYS:
+        value = call_params.get(key)
+        if isinstance(value, str) and value:
+            try:
+                call_params[key] = ensure_layer_in_project(value, store)
+            except KeyError:
+                pass
+
+    output_names: dict[str, str] = {}
+    for key in ('output', 'path'):
+        value = call_params.get(key)
+        if isinstance(value, str) and value and not looks_like_path(value):
+            output_names[key] = value
+            call_params[key] = output_path(value)
+
+    payload = cls().run(call_params).to_dict()
+
+    if store is not None and payload.get('ok') and payload.get('data'):
+        data = payload['data']
+        produced = data.get('output') or data.get('path')
+        if produced:
+            requested = output_names.get('output') or output_names.get('path')
+            logical = requested or logical_name_for_path(produced)
+            artifact = store.register(logical, produced, tool=tool, **_artifact_meta(produced))
+            data.setdefault('artifact', artifact.name)
+            add_artifact_to_project(artifact)
+    return payload
 
 
 class _BridgeRequestHandler(BaseHTTPRequestHandler):
@@ -216,6 +276,9 @@ class _BridgeRequestHandler(BaseHTTPRequestHandler):
         if self.path == '/v1/tools':
             self._handle_tools_list()
             return
+        if self.path == '/v1/artifacts':
+            self._handle_artifacts()
+            return
         self._send_json(404, BridgeError('not_found', f'Route introuvable : {self.path}').to_dict())
 
     def do_POST(self) -> None:
@@ -264,6 +327,12 @@ class _BridgeRequestHandler(BaseHTTPRequestHandler):
         except Exception as e:
             self._send_json(500, BridgeError('internal', str(e)).to_dict())
 
+    def _handle_artifacts(self) -> None:
+        try:
+            self._send_json(200, {'ok': True, 'data': self.server.artifacts.list()})
+        except Exception as e:
+            self._send_json(500, BridgeError('internal', str(e)).to_dict())
+
     def _handle_tool_execute(self) -> None:
         try:
             length = int(self.headers.get('Content-Length', 0) or 0)
@@ -278,7 +347,7 @@ class _BridgeRequestHandler(BaseHTTPRequestHandler):
             self._send_json(400, BridgeError('missing_param', "Champ 'tool' requis").to_dict())
             return
         try:
-            res = self.server.invoker.invoke(lambda: _execute_tool_sync(tool, params))
+            res = self.server.invoker.invoke(lambda: _execute_tool_sync(tool, params, self.server.artifacts))
         except BridgeError as e:
             self._send_json(404, e.to_dict())
             return
@@ -294,6 +363,8 @@ class _BridgeServer(ThreadingHTTPServer):
         super().__init__(addr, handler)
         self.access_token = access_token
         self.invoker = invoker
+        from plugin.geofunc.artifacts import ArtifactStore
+        self.artifacts = ArtifactStore()
 
 
 class BridgeServer:

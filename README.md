@@ -2,7 +2,7 @@
 
 Agent GeoAI pour QGIS : réalise des tâches SIG à partir d'instructions en langage naturel.
 
-> **Statut du projet : MVP livré (S00–S10 terminés, version 1.0.0)** — voir [`PROJECT_STATUS.md`](PROJECT_STATUS.md)
+> **Statut du projet : MVP livré (S00–S10, version 1.0.0) ; V2 « Workflow Agent » en cours (S11)** — voir [`PROJECT_STATUS.md`](PROJECT_STATUS.md)
 > **Document de référence :** cahier des charges combiné V2.0 (`../TerangaGIS_Cahier_des_charges_Combine_V2.md`)
 > **Guide utilisateur :** [`docs/guide_utilisateur.md`](docs/guide_utilisateur.md)
 
@@ -15,6 +15,16 @@ Instruction naturelle → compréhension → plan → validation → QGIS → r�
 TerangaGIS n'est ni un simple chatbot ni un simple serveur MCP : c'est un **agent GeoAI**
 qui inspecte le projet, construit un plan, demande confirmation pour les opérations à risque,
 exécute via QGIS Processing et journalise chaque action.
+
+## Chaînage par nom des sorties (S11)
+
+Pour un workflow multi-étapes, chaque étape productrice peut nommer sa sortie
+(paramètre `output`, ex. `routes_buffer`) ; les étapes suivantes la référencent par
+ce nom (`layer`, `input`, `overlay`, `from`, `to`). Le bridge (côté QGIS) résout la
+référence via le registre d'artefacts de session (`plugin/geofunc/artifacts.py`),
+ajoute la couche produite au projet et renvoie son nom dans le champ `artifact` —
+aucun rechargement manuel de fichier n'est nécessaire. Le registre est consultable
+via `GET /v1/artifacts`.
 
 ## Prérequis
 
@@ -103,6 +113,7 @@ python scripts/run_golden.py              # évaluation réelle (clé LLM requis
 ```bash
 "C:/Program Files/QGIS 3.44.15/bin/python-qgis-ltr.bat" tests/tools_smoke.py
 "C:/Program Files/QGIS 3.44.15/bin/python-qgis-ltr.bat" tests/bridge_http_smoke.py
+"C:/Program Files/QGIS 3.44.15/bin/python-qgis-ltr.bat" tests/artifacts_smoke.py
 "C:/Program Files/QGIS 3.44.15/bin/python-qgis-ltr.bat" tests/workflows_smoke.py
 ```
 

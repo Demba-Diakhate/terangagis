@@ -2,16 +2,16 @@
 
 > **Source de vérité de l'avancement.** Toute session de travail commence par la lecture de ce fichier et se termine par sa mise à jour. Règles : `AGENTS.md`.
 
-**Dernière mise à jour :** 2026-10-08
+**Dernière mise à jour :** 2026-10-09
 
 | Champ | Valeur |
 |---|---|
-| **Sprint courant** | S10 — Release MVP |
+| **Sprint courant** | S11 — Réutilisation des sorties intermédiaires (V2 Workflow Agent) |
 | **Statut du sprint** | **FAIT** |
 | **Tâche en cours** | — |
-| **Prochaine action** | Release MVP prête : tag `v1.0.0` + push (à valider par l'utilisateur) |
+| **Prochaine action** | Démarrer S12 — Exécution robuste : retries + gestion d'erreur fine |
 | **Bloqueurs** | CI Docker (RT8) non exécutée localement (à valider au premier push) ; tests LLM live (clé absente — H1) |
-| **Sprints terminés** | S00, S01, S02, S03, S04, S05, S06, S07, S08, S09, S10 |
+| **Sprints terminés** | S00, S01, S02, S03, S04, S05, S06, S07, S08, S09, S10, S11 |
 
 ---
 
@@ -31,21 +31,37 @@
 | S09 | Tests et qualité (corpus golden, CI) | **FAIT** | 2026-10-08 | Corpus 30 cas + CI Docker/GitHub Actions + doc utilisateur |
 | S10 | Release MVP | **FAIT** | 2026-10-08 | Packaging + 12 critères vérifiés |
 
+### V2 — Workflow Agent (roadmap CDC §30)
+
+| Sprint | Intitulé | Statut | DoD vérifiée le | Notes |
+|---|---|---|---|---|
+| S11 | Réutilisation des sorties intermédiaires | **FAIT** | 2026-10-09 | Registre d'artefacts + résolution par nom dans le bridge |
+| S12 | Exécution robuste : retries + erreurs | À FAIRE | — | Classification, `on_error`, backoff, retry de parsing |
+| S13 | Mémoire de conversation + reprise | À FAIRE | — | Conversation en mémoire + `resume` + correction LLM (1 essai) |
+
 Légende : `À FAIRE` | `EN COURS` | `FAIT` | `BLOQUÉ`
 
 ---
 
-## Détail du sprint courant — S07 Sécurité et traçabilité
+## Détail du sprint courant — S11 Réutilisation des sorties intermédiaires (V2 Workflow Agent)
 
-**Objectif :** durcir la sécurité (jeton, sanitisation) et compléter la traçabilité.
-**DoD :** sanitisation des données envoyées au LLM (RT7), journalisation exposée, gestion d'erreurs homogène, tests.
+**Objectif :** permettre à un plan multi-étapes généré par l'agent d'enchaîner ses
+étapes en réutilisant les sorties intermédiaires **par nom**, sans rechargement manuel
+de fichier (roadmap CDC §30, V2).
+
+**DoD :** un chaînage `buffer` (sortie nommée) → `clip` (référence par nom) fonctionne
+sans intervention ; les couches produites sont ajoutées au projet et exposées ; tests verts.
 
 | ID | Tâche | Statut | Notes |
 |---|---|---|---|
-| S07-T1 | Sanitisation des attributs/aperçus envoyés au LLM (RT7) | À FAIRE | — |
-| S07-T2 | Exposition du journal (consultation) | À FAIRE | RT4 |
-| S07-T3 | Gestion d'erreurs homogène (bridge/agent/UI) | À FAIRE | — |
-| S07-T4 | Tests sécurité/traçabilité | À FAIRE | — |
+| S11-T1 | Registre d'artefacts pur (nom logique → chemin + métadonnées) | FAIT | `plugin/geofunc/artifacts.py` (`ArtifactStore`, `logical_name_for_path`, `looks_like_path`) |
+| S11-T2 | Résolution de couche (artefact → projet → chemin) + ajout au projet | FAIT | `plugin/geofunc/layer_resolver.py` (`ensure_layer_in_project`, `add_artifact_to_project`) |
+| S11-T3 | Branchement du registre dans le bridge (résolution entrées/sorties, `artifact`, `GET /v1/artifacts`) | FAIT | `plugin/bridge/bridge.py` (`_execute_tool_sync`, `_BridgeServer.artifacts`) |
+| S11-T4 | Prompt : nommer les sorties et les référencer dans les étapes suivantes | FAIT | `plugin/agent/prompts.py` |
+| S11-T5 | Tests | FAIT | `tests/test_artifacts.py` (7), `tests/artifacts_smoke.py` (11 checks QGIS) |
+
+**Bilan des tests S11 :** 83 pytest verts ; smokes QGIS : artifacts 11/11, bridge 10/10,
+tools 16/16, workflows 8/8, e2e 7/7, plugin 6/6, chat 4/4 — tous verts.
 
 ### Sprint terminé — S10 Release MVP
 
@@ -185,6 +201,7 @@ smokes QGIS (16 + 10 + 8 + 6 + 4 + 7 checks) — tous verts.
 | 2026-10-08 | Corpus golden séparé du code plugin (`plugin/agent/golden.py` pur + `tests/golden/corpus.json`), évalué hors CI via `scripts/run_golden.py` | RT2, S09 |
 | 2026-10-08 | Plugin rendu **relocalisable** : `plugin/__init__.py` enregistre l'alias `sys.modules['plugin']` et ajoute le dossier du plugin au `sys.path`, permettant d'embarquer `common`/`mcp` et de s'installer sous le nom `terangagis` | S10, `plugin/__init__.py` |
 | 2026-10-08 | Release MVP versionnée `1.0.0` ; paquet `dist/terangagis-1.0.0.zip` (dossier `terangagis/` autonome) | S10, `scripts/build_plugin.py`, `plugin/metadata.txt` |
+| 2026-10-09 | Réutilisation des sorties intermédiaires : registre d'artefacts **côté bridge** (durée = session), résolution des entrées par nom (artefact → projet → chemin) et ajout des couches produites au projet QGIS ; sortie nommable via `output` (nom logique) | V2/S11, `plugin/geofunc/artifacts.py`, `plugin/geofunc/layer_resolver.py`, `plugin/bridge/bridge.py` |
 
 ---
 
@@ -214,3 +231,4 @@ smokes QGIS (16 + 10 + 8 + 6 + 4 + 7 checks) — tous verts.
 | 2026-10-08 | S08 terminé : 3 workflows métier (routes, nettoyage GPS, postes de santé), runner de chaînage, jeux de test documentés, exemples dans le prompt ; tests (61 pytest + 8 checks workflows) ; S09 à démarrer | `plugin/workflows/*`, `plugin/agent/prompts.py`, `tests/test_workflows.py`, `tests/workflows_smoke.py` |
 | 2026-10-08 | S09 terminé : corpus golden (30 cas) + runner hors CI, tests erreur/sécurité, CI Docker qgis/qgis + GitHub Actions, guide utilisateur ; tests (76 pytest + smokes QGIS) ; S10 à démarrer | `tests/golden/corpus.json`, `plugin/agent/golden.py`, `scripts/run_golden.py`, `tests/test_golden_corpus.py`, `tests/test_errors.py`, `Dockerfile.ci`, `.github/workflows/ci.yml`, `docs/guide_utilisateur.md` |
 | 2026-10-08 | S10 terminé : plugin relocalisable, packaging `dist/terangagis-1.0.0.zip`, script d'installation, métadonnées 1.0.0, vérification des 12 critères du MVP ; tests (76 pytest + packaging + smokes QGIS) — **Release MVP** | `plugin/__init__.py`, `plugin/metadata.txt`, `scripts/build_plugin.py`, `scripts/install_plugin.ps1`, `tests/packaging_smoke.py`, `.github/workflows/ci.yml`, `README.md`, `docs/guide_utilisateur.md` |
+| 2026-10-09 | S11 terminé (V2 démarré) : réutilisation des sorties intermédiaires par nom — registre d'artefacts (bridge), résolution de couche + ajout au projet, `GET /v1/artifacts`, prompt de nommage ; tests (83 pytest + smoke artifacts 11/11) ; S12 à démarrer | `plugin/geofunc/artifacts.py`, `plugin/geofunc/layer_resolver.py`, `plugin/bridge/bridge.py`, `plugin/agent/prompts.py`, `tests/test_artifacts.py`, `tests/artifacts_smoke.py`, `README.md`, `docs/architecture.md` |

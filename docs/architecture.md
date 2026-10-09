@@ -35,7 +35,7 @@ Données SIG + journal SQLite (plugin/core/)
 | `plugin/ui/` | Panneau chat, affichage du plan, Exécuter/Annuler | S06 |
 | `plugin/agent/` | Boucle agent : compréhension, planification, contrôle ; client LLM compatible OpenAI (OpenRouter/Gemini) | S04-S05 |
 | `plugin/bridge/` | Serveur HTTP local (127.0.0.1, port aléatoire, jeton) appelé par le MCP ; marshalling vers le thread principal Qt | S01 |
-| `plugin/geofunc/` | Outils SIG PyQGIS — Processing-first (`native:*`), validation des paramètres, niveaux de risque | S02 |
+| `plugin/geofunc/` | Outils SIG PyQGIS — Processing-first (`native:*`), validation des paramètres, niveaux de risque ; registre d'artefacts (réutilisation des sorties par nom) | S02, S11 |
 | `plugin/core/` | Configuration, journal SQLite (prompts LLM inclus), erreurs structurées, `compat.py` (QGIS 3.40→3.44) | S00-S07 |
 | `mcp_server/` | Serveur MCP stdio ; chaque tool = wrapper HTTP vers le bridge | S03 |
 | `common/` | Code partagé **sans dépendance QGIS** : config, schémas JSON, codes d'erreur — testable partout | S00+ |
@@ -69,6 +69,29 @@ Données SIG + journal SQLite (plugin/core/)
 4. Validation humaine dans l'interface (§16 du CDC).
 5. Exécution séquentielle, arrêt à la première erreur, contrôle des résultats.
 6. Journalisation SQLite + restitution du résumé.
+
+## Réutilisation des sorties intermédiaires (S11 — V2)
+
+```text
+Étape 1 : buffer(layer="routes", output="routes_buffer")
+        → produit <out>/routes_buffer_teranga_*.gpkg
+        → enregistré comme artefact "routes_buffer" + ajouté au projet QGIS
+
+Étape 2 : clip(input="villages", overlay="routes_buffer")
+        → le bridge résout "routes_buffer" via le registre d'artefacts
+          (plugin/geofunc/artifacts.py) puis la couche du projet
+        → aucune rechargement manuel de fichier
+```
+
+- `plugin/geofunc/artifacts.py` : `ArtifactStore` (nom logique → chemin + métadonnées),
+  module pur (sans QGIS), durée de vie = session du bridge.
+- `plugin/geofunc/layer_resolver.py` : `ensure_layer_in_project()` résout une référence
+  dans l'ordre **artefact → couche du projet → chemin de fichier** et ajoute la couche
+  produite au projet sous son nom logique.
+- Bridge (`plugin/bridge/bridge.py`) : `_execute_tool_sync` normalise les paramètres de
+  sortie (nom logique → chemin horodaté), résout les paramètres de couche, enregistre
+  l'artefact produit et renvoie `artifact` dans les données du résultat ; `GET /v1/artifacts`
+  expose le registre de session.
 
 ## Conventions de code
 
