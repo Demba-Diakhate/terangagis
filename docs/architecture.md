@@ -94,9 +94,28 @@ Données SIG + journal SQLite (plugin/core/)
   l'artefact produit et renvoie `artifact` dans les données du résultat ; `GET /v1/artifacts`
   expose le registre de session.
 
-## Conventions de code
+## Reprise contrôlée et mémoire de conversation (S13 — V2)
 
-- Python moderne (type hints, dataclasses), docstrings en français.
+```text
+Panneau chat (plugin/ui/chat_panel.py)
+    ├─ Conversation (plugin/agent/conversation.py, module pur)
+    │    → historique (tours+artefacts) injecté dans GeoAgent.plan(...)
+    └─ exécution → échec récupérable
+           → _confirm_repair() (validation humaine)
+           → GeoAgent.repair(étape échouée) — UNE seule tentative
+           → ré-exécution du plan corrigé via l'orchestrateur
+```
+
+- `plugin/agent/conversation.py` : `Conversation` (nom logique des tours → messages LLM),
+  budget borné (tours + caractères) ; module pur (testable sans QGIS).
+- `plugin/agent/agent.py` : `plan(..., conversation=None)` injecte l'historique ;
+  `repair(failed_step, error_message, context)` produit un plan de correction (1 essai).
+- `plugin/agent/orchestrator.py` : `resume(plan, previous_report, plan_override=...)`
+  reprend l'exécution à l'étape échouée.
+- `plugin/ui/chat_panel.py` : `_RepairWorker` + `_on_repaired` ; la reprise est proposée
+  une seule fois (`_repaired_once`), jamais automatique.
+
+## Conventions de code
 - Aucune dépendance externe dans `plugin/` au-delà de ce que QGIS embarque.
 - `common/` ne doit jamais importer `qgis.*` (permet les tests sans QGIS).
 - Erreurs : exceptions structurées + codes d'erreur partagés, messages en français.

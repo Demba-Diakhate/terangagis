@@ -134,6 +134,29 @@ class Orchestrator:
                     break
         return report, exec_report
 
+    def resume(
+        self,
+        plan: AgentPlan,
+        previous_report: ExecutionReport,
+        *,
+        from_index: int | None = None,
+        plan_override: AgentPlan | None = None,
+        **kwargs: Any,
+    ) -> tuple[ValidationReport, ExecutionReport]:
+        """Reprend l'exécution à partir de l'étape qui a échoué (S13).
+
+        Réexécute l'étape échouée et les suivantes (index de départ = par défaut
+        `previous_report.failed_index`). `plan_override` permet de fournir un plan
+        corrigé (proposé par le LLM) qui remplace les étapes restantes.
+        """
+        source = plan_override if plan_override is not None else plan
+        start = from_index
+        if start is None:
+            start = previous_report.failed_index if previous_report.failed_index is not None else 0
+        start = max(0, min(int(start), len(source.steps)))
+        remaining = AgentPlan(steps=list(source.steps[start:]), assistant_text=source.assistant_text)
+        return self.run(remaining, **kwargs)
+
     def _run_step(
         self,
         step: AgentStep,

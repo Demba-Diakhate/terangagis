@@ -10,6 +10,7 @@ from qgis.PyQt.QtCore import QThread, pyqtSignal
 from qgis.PyQt.QtWidgets import (QHBoxLayout, QLabel, QMessageBox, QPlainTextEdit,
                                  QPushButton, QVBoxLayout, QWidget)
 
+from plugin.agent.conversation import Conversation
 from plugin.agent.policy import requires_confirmation, risky_steps
 from plugin.agent.validation import validate_plan
 from plugin.ui.formatting import format_execution, format_plan, format_validation
@@ -19,15 +20,16 @@ class _PlanWorker(QThread):
     plan_ready = pyqtSignal(object)
     failed = pyqtSignal(str)
 
-    def __init__(self, agent, instruction: str, context: str = '') -> None:
+    def __init__(self, agent, instruction: str, context: str = '', conversation=None) -> None:
         super().__init__()
         self.agent = agent
         self.instruction = instruction
         self.context = context
+        self.conversation = conversation
 
     def run(self) -> None:  # noqa: D401
         try:
-            plan = self.agent.plan(self.instruction, context=self.context)
+            plan = self.agent.plan(self.instruction, context=self.context, conversation=self.conversation)
         except Exception as e:  # noqa: BLE001
             self.failed.emit(str(e))
             return
@@ -60,14 +62,39 @@ class _ExecWorker(QThread):
         self.finished_report.emit(report, exec_report)
 
 
+class _RepairWorker(QThread):
+    """Une seule tentative de correction LLM d'une étape échouée (S13)."""
+
+    repaired = pyqtSignal(object)
+    failed = pyqtSignal(str)
+
+    def __init__(self, agent, failed_step, error_message, context='') -> None:
+        super().__init__()
+        self.agent = agent
+        self.failed_step = failed_step
+        self.error_message = error_message
+        self.context = context
+
+    def run(self) -> None:  # noqa: D401
+        try:
+            plan = self.agent.repair(self.failed_step, self.error_message, context=self.context)
+        except Exception as e:  # noqa: BLE001
+            self.failed.emit(str(e))
+            return
+        self.repaired.emit(plan)
+
+
 class ChatPanel(QWidget):
     def __init__(self, agent, orchestrator, context_provider=None, parent=None) -> None:
         super().__init__(parent)
         self.agent = agent
         self.orchestrator = orchestrator
         self.context_provider = context_provider
+        self.conversation = Conversation()
         self._plan = None
         self._worker = None
+        self._instruction = ''
+        self._repaired_once = False
         self._build_ui()
 
     def _build_ui(self) -> None:
@@ -104,6 +131,8 @@ class ChatPanel(QWidget):
             return
         self.input.clear()
         self.send_button.setEnabled(False)
+        self._repaired_once = False
+        self._instruction = instruction
         self._append(f"Vous : {instruction}")
         self.status.setText("Analyse de la demande…")
 
@@ -115,12 +144,14 @@ class ChatPanel(QWidget):
             except Exception:  # noqa: BLE001
                 context = ''
 
-        self._worker = _PlanWorker(self.agent, instruction, context)
+        self._worker = _PlanWorker(self.agent, instruction, context, self.conversation)
         self._worker.plan_ready.connect(self._on_plan)
         self._worker.failed.connect(self._on_failed)
         self._worker.start()
 
     def _on_plan(self, plan) -> None:
+        self._plan = plan
+        self.conversation.add_user(self._instruction)
         self._append(format_plan(plan))
         if not plan.steps:
             self._append("Aucune action à exécuter.")
@@ -146,6 +177,7 @@ class ChatPanel(QWidget):
             self._reset()
             return
 
+        self.conversation.add_plan(plan)
         self._execute(plan)
 
     def _confirm(self, plan) -> bool:
@@ -176,8 +208,61 @@ class ChatPanel(QWidget):
 
     def _on_executed(self, report, exec_report) -> None:
         self._append(format_execution(exec_report))
+        self.conversation.add_execution(exec_report)
+        if not exec_report.ok and getattr(exec_report, 'recoverable', False) and not self._repaired_once:
+            self._attempt_repair(exec_report)
+            return
         self._append("Terminé." if exec_report.ok else "Terminé avec des erreurs.")
         self._reset()
+
+    def _attempt_repair(self, exec_report) -> None:
+        failed_step = exec_report.failed_step
+        if failed_step is None or self.agent is None:
+            self._append("Terminé avec des erreurs.")
+            self._reset()
+            return
+        if not self._confirm_repair(failed_step):
+            self._append("Correction refusée.")
+            self._reset()
+            return
+        self._repaired_once = True
+        self.status.setText("Correction de l'étape échouée (1 essai)…")
+        error = (failed_step.result or {}).get('error') or {}
+        self._worker = _RepairWorker(
+            self.agent, failed_step, error.get('message', ''), context=self._repair_context(),
+        )
+        self._worker.repaired.connect(self._on_repaired)
+        self._worker.failed.connect(self._on_failed)
+        self._worker.start()
+
+    def _on_repaired(self, plan) -> None:
+        if not getattr(plan, 'steps', None):
+            self._append("Aucune correction proposée.")
+            self._reset()
+            return
+        self._append("Correction proposée :")
+        self._append(format_plan(plan))
+        self._execute(plan)
+
+    def _repair_context(self) -> str:
+        provider = getattr(self, 'context_provider', None)
+        if callable(provider):
+            try:
+                return provider() or ''
+            except Exception:  # noqa: BLE001
+                return ''
+        return ''
+
+    def _confirm_repair(self, failed_step) -> bool:
+        answer = QMessageBox.question(
+            self,
+            "Corriger automatiquement",
+            f"L'étape « {failed_step.tool} » a échoué.\n\n"
+            "Demander à l'agent une correction (une seule tentative) ?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.Yes,
+        )
+        return answer == QMessageBox.Yes
 
     def _on_failed(self, message: str) -> None:
         self._append(f"Erreur : {message}")

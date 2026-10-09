@@ -2,7 +2,7 @@
 
 Agent GeoAI pour QGIS : réalise des tâches SIG à partir d'instructions en langage naturel.
 
-> **Statut du projet : MVP livré (S00–S10, version 1.0.0) ; V2 « Workflow Agent » en cours (S11)** — voir [`PROJECT_STATUS.md`](PROJECT_STATUS.md)
+> **Statut du projet : MVP livré (S00–S10, version 1.0.0) ; V2 « Workflow Agent » en cours (S13)** — voir [`PROJECT_STATUS.md`](PROJECT_STATUS.md)
 > **Document de référence :** cahier des charges combiné V2.0 (`../TerangaGIS_Cahier_des_charges_Combine_V2.md`)
 > **Guide utilisateur :** [`docs/guide_utilisateur.md`](docs/guide_utilisateur.md)
 
@@ -35,6 +35,16 @@ Les erreurs sont classées `transient` / `permanent` (`plugin/agent/retry.py`) :
 - politique `stop` (défaut) ou `continue` par étape (`AgentStep.on_error`) ;
 - côté LLM, les 4xx ne sont pas réessayés, 429/5xx/timeout le sont (avec `Retry-After`) ;
 - l'agent redemande une correction si le plan n'est pas exploitable (`parse_retries`).
+
+## Mémoire de conversation et reprise (S13)
+
+- Mémoire de conversation de session (`plugin/agent/conversation.py`, module **pur**) :
+  l'historique des échanges et les artefacts produits sont réinjectés dans le prompt
+  (budget borné) pour permettre les demandes de suivi (« et maintenant ? »).
+- **Reprise contrôlée** : si une étape échoue avec une erreur *récupérable*
+  (`Orchestrator.resume`), l'interface propose **une seule** correction LLM de l'étape
+  (`GeoAgent.repair`), ré-exécutée après accord de l'utilisateur. Aucune boucle automatique.
+- La mémoire de conversation ne vit que pendant la session du panneau (aucune persistance).
 
 ## Prérequis
 

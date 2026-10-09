@@ -38,12 +38,13 @@ class GeoAgent:
         self.journal = journal
         self.parse_retries = max(0, int(parse_retries))
 
-    def plan(self, user_query: str, context: str = '') -> AgentPlan:
+    def plan(self, user_query: str, context: str = '', conversation: Any = None) -> AgentPlan:
         """Produit un plan (liste d'étapes) sans exécuter les outils.
 
-        Si la réponse du LLM n'est pas exploitable (JSON d'arguments invalide,
-        outil inconnu), l'agent redemande une correction, au plus `parse_retries`
-        fois (règle R3).
+        Si `conversation` est fourni (objet avec une méthode `messages()`), son
+        historique est injecté avant la demande courante (S13). Si la réponse du
+        LLM n'est pas exploitable (JSON d'arguments invalide, outil inconnu),
+        l'agent redemande une correction, au plus `parse_retries` fois (règle R3).
         """
         if not user_query or not user_query.strip():
             raise AgentError('Instruction vide.')
@@ -54,6 +55,9 @@ class GeoAgent:
         base_messages: List[Dict[str, Any]] = [{'role': 'system', 'content': SYSTEM_PROMPT}]
         if context:
             base_messages.append({'role': 'system', 'content': f'Contexte QGIS :\n{context}'})
+        history = self._conversation_messages(conversation)
+        if history:
+            base_messages.extend(history)
         base_messages.append({'role': 'user', 'content': user_query})
 
         attempts = 1 + self.parse_retries
@@ -94,6 +98,59 @@ class GeoAgent:
             return plan
 
         raise last_error or AgentError('Plan invalide.')
+
+    @staticmethod
+    def _conversation_messages(conversation: Any) -> List[Dict[str, str]]:
+        if conversation is None:
+            return []
+        try:
+            history = conversation.messages()
+        except Exception:  # noqa: BLE001
+            return []
+        return list(history or [])[:2 * getattr(conversation, 'max_turns', 12)]
+
+    def repair(self, failed_step: Any, error_message: str, context: str = '') -> AgentPlan:
+        """Demande au LLM une correction pour une étape échouée (S13).
+
+        Retourne un plan de remplacement (les étapes à exécuter à la place).
+        Un seul essai : l'appelant décide de relancer ou d'abandonner.
+        """
+        tool = getattr(failed_step, 'tool', '?')
+        params = getattr(failed_step, 'params', {}) or {}
+        context = sanitize_text(context, max_length=4000) if context else ''
+        error_message = sanitize_text(str(error_message), max_length=500)
+
+        messages: List[Dict[str, Any]] = [{'role': 'system', 'content': SYSTEM_PROMPT}]
+        if context:
+            base = f'Contexte QGIS :\n{context}'
+            messages.append({'role': 'system', 'content': base})
+        messages.append({
+            'role': 'user',
+            'content': (
+                f"L'étape « {tool} » avec les paramètres {params} a échoué : {error_message}. "
+                "Propose une correction en un ou plusieurs appels d'outils valides qui "
+                "remplacent cette étape. N'inclus que les étapes à exécuter, sans explication."
+            ),
+        })
+
+        try:
+            message = self.llm.chat(messages, tools=openai_tools())
+        except LLMError as e:
+            raise AgentError(str(e)) from e
+
+        if self.journal is not None:
+            try:
+                self.journal.record_llm(messages, message)
+            except Exception:  # noqa: BLE001
+                pass
+
+        plan = self._parse(message)
+        if self.journal is not None:
+            try:
+                self.journal.record_plan(plan)
+            except Exception:  # noqa: BLE001
+                pass
+        return plan
 
     @staticmethod
     def _parse(message: Dict[str, Any]) -> AgentPlan:
