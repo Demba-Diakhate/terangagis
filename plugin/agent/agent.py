@@ -18,6 +18,8 @@ from .tools_schema import TOOL_NAMES, openai_tools
 class AgentStep:
     tool: str
     params: Dict[str, Any] = field(default_factory=dict)
+    on_error: str | None = None
+    max_retries: int | None = None
 
 
 @dataclass
@@ -31,41 +33,67 @@ class AgentError(Exception):
 
 
 class GeoAgent:
-    def __init__(self, llm: LLMClient | None = None, journal: Any = None) -> None:
+    def __init__(self, llm: LLMClient | None = None, journal: Any = None, parse_retries: int = 1) -> None:
         self.llm = llm or LLMClient()
         self.journal = journal
+        self.parse_retries = max(0, int(parse_retries))
 
     def plan(self, user_query: str, context: str = '') -> AgentPlan:
-        """Produit un plan (liste d'étapes) sans exécuter les outils."""
+        """Produit un plan (liste d'étapes) sans exécuter les outils.
+
+        Si la réponse du LLM n'est pas exploitable (JSON d'arguments invalide,
+        outil inconnu), l'agent redemande une correction, au plus `parse_retries`
+        fois (règle R3).
+        """
         if not user_query or not user_query.strip():
             raise AgentError('Instruction vide.')
 
         user_query = sanitize_text(user_query, max_length=2000)
         context = sanitize_text(context, max_length=4000) if context else ''
 
-        messages: List[Dict[str, Any]] = [{'role': 'system', 'content': SYSTEM_PROMPT}]
+        base_messages: List[Dict[str, Any]] = [{'role': 'system', 'content': SYSTEM_PROMPT}]
         if context:
-            messages.append({'role': 'system', 'content': f'Contexte QGIS :\n{context}'})
-        messages.append({'role': 'user', 'content': user_query})
+            base_messages.append({'role': 'system', 'content': f'Contexte QGIS :\n{context}'})
+        base_messages.append({'role': 'user', 'content': user_query})
 
-        try:
-            message = self.llm.chat(messages, tools=openai_tools())
-        except LLMError as e:
-            raise AgentError(str(e)) from e
-
-        if self.journal is not None:
+        attempts = 1 + self.parse_retries
+        last_error: AgentError | None = None
+        for attempt in range(attempts):
+            messages = list(base_messages)
+            if attempt > 0 and last_error is not None:
+                messages.append({
+                    'role': 'user',
+                    'content': (
+                        f"Ta réponse précédente était invalide : {last_error}. "
+                        "Réessaie en utilisant uniquement les outils disponibles et des "
+                        "arguments JSON valides."
+                    ),
+                })
             try:
-                self.journal.record_llm(messages, message)
-            except Exception:  # noqa: BLE001
-                pass
+                message = self.llm.chat(messages, tools=openai_tools())
+            except LLMError as e:
+                raise AgentError(str(e)) from e
 
-        plan = self._parse(message)
-        if self.journal is not None:
+            if self.journal is not None:
+                try:
+                    self.journal.record_llm(messages, message)
+                except Exception:  # noqa: BLE001
+                    pass
+
             try:
-                self.journal.record_plan(plan)
-            except Exception:  # noqa: BLE001
-                pass
-        return plan
+                plan = self._parse(message)
+            except AgentError as e:
+                last_error = e
+                continue
+
+            if self.journal is not None:
+                try:
+                    self.journal.record_plan(plan)
+                except Exception:  # noqa: BLE001
+                    pass
+            return plan
+
+        raise last_error or AgentError('Plan invalide.')
 
     @staticmethod
     def _parse(message: Dict[str, Any]) -> AgentPlan:

@@ -6,12 +6,12 @@
 
 | Champ | Valeur |
 |---|---|
-| **Sprint courant** | S11 — Réutilisation des sorties intermédiaires (V2 Workflow Agent) |
+| **Sprint courant** | S12 — Exécution robuste : retries + gestion d'erreur fine (V2 Workflow Agent) |
 | **Statut du sprint** | **FAIT** |
 | **Tâche en cours** | — |
-| **Prochaine action** | Démarrer S12 — Exécution robuste : retries + gestion d'erreur fine |
+| **Prochaine action** | Démarrer S13 — Mémoire de conversation + reprise contrôlée |
 | **Bloqueurs** | CI Docker (RT8) non exécutée localement (à valider au premier push) ; tests LLM live (clé absente — H1) |
-| **Sprints terminés** | S00, S01, S02, S03, S04, S05, S06, S07, S08, S09, S10, S11 |
+| **Sprints terminés** | S00, S01, S02, S03, S04, S05, S06, S07, S08, S09, S10, S11, S12 |
 
 ---
 
@@ -36,14 +36,35 @@
 | Sprint | Intitulé | Statut | DoD vérifiée le | Notes |
 |---|---|---|---|---|
 | S11 | Réutilisation des sorties intermédiaires | **FAIT** | 2026-10-09 | Registre d'artefacts + résolution par nom dans le bridge |
-| S12 | Exécution robuste : retries + erreurs | À FAIRE | — | Classification, `on_error`, backoff, retry de parsing |
+| S12 | Exécution robuste : retries + erreurs | **FAIT** | 2026-10-09 | Classification transient/permanent, `on_error`, backoff, retry de parsing |
 | S13 | Mémoire de conversation + reprise | À FAIRE | — | Conversation en mémoire + `resume` + correction LLM (1 essai) |
 
 Légende : `À FAIRE` | `EN COURS` | `FAIT` | `BLOQUÉ`
 
 ---
 
-## Détail du sprint courant — S11 Réutilisation des sorties intermédiaires (V2 Workflow Agent)
+## Détail du sprint courant — S12 Exécution robuste : retries + gestion d'erreur fine
+
+**Objectif :** durcir la planification/exécution multi-étapes : classification des
+erreurs, politique par étape (`stop`/`continue`), retries limités avec backoff,
+reprise de parsing du plan (R3).
+
+**DoD :** erreurs transitoires réessayées (succès possible), erreurs permanentes non
+réessayées, poursuite possible après échec, retry de parsing, tests verts.
+
+| ID | Tâche | Statut | Notes |
+|---|---|---|---|
+| S12-T1 | Classification d'erreurs + backoff (pur) | FAIT | `plugin/agent/retry.py` (`classify_error`, `is_retryable`, `backoff_seconds`) |
+| S12-T2 | Orchestrateur : `on_error` par étape, retries + backoff, `ExecutionReport` enrichi | FAIT | `plugin/agent/orchestrator.py` (`attempts`, `error_class`, `failed_index`, `recoverable`) |
+| S12-T3 | Retry de parsing du plan (correction LLM, R3) | FAIT | `plugin/agent/agent.py` (`parse_retries`) |
+| S12-T4 | Client LLM : `retryable`/`Retry-After`, backoff, `sleep` injectable | FAIT | `plugin/agent/llm.py` (`LLMError.retryable`, `LLMClient(sleep=...)`) |
+| S12-T5 | Configuration (`TERANGA_STEP_MAX_RETRIES`, `TERANGA_LLM_BACKOFF`) + branchement plugin | FAIT | `common/config.py`, `.env.example`, `plugin/terangagis_plugin.py`, `plugin/ui/chat_panel.py` |
+| S12-T6 | Tests | FAIT | `tests/test_retry.py` (6), `tests/test_orchestrator_retry.py` (7), `tests/test_llm_retry.py` (5) |
+
+**Bilan des tests S12 :** 101 pytest verts ; smokes QGIS : artifacts 11/11, bridge 10/10,
+tools 16/16, workflows 8/8, e2e 7/7, plugin 6/6, chat 4/4 — tous verts.
+
+### Sprint terminé — S11 Réutilisation des sorties intermédiaires
 
 **Objectif :** permettre à un plan multi-étapes généré par l'agent d'enchaîner ses
 étapes en réutilisant les sorties intermédiaires **par nom**, sans rechargement manuel
@@ -202,6 +223,7 @@ smokes QGIS (16 + 10 + 8 + 6 + 4 + 7 checks) — tous verts.
 | 2026-10-08 | Plugin rendu **relocalisable** : `plugin/__init__.py` enregistre l'alias `sys.modules['plugin']` et ajoute le dossier du plugin au `sys.path`, permettant d'embarquer `common`/`mcp` et de s'installer sous le nom `terangagis` | S10, `plugin/__init__.py` |
 | 2026-10-08 | Release MVP versionnée `1.0.0` ; paquet `dist/terangagis-1.0.0.zip` (dossier `terangagis/` autonome) | S10, `scripts/build_plugin.py`, `plugin/metadata.txt` |
 | 2026-10-09 | Réutilisation des sorties intermédiaires : registre d'artefacts **côté bridge** (durée = session), résolution des entrées par nom (artefact → projet → chemin) et ajout des couches produites au projet QGIS ; sortie nommable via `output` (nom logique) | V2/S11, `plugin/geofunc/artifacts.py`, `plugin/geofunc/layer_resolver.py`, `plugin/bridge/bridge.py` |
+| 2026-10-09 | Exécution robuste : erreurs classées `transient`/`permanent`/`unknown` ; politique `on_error` (`stop`/`continue`) et retries (backoff exponentiel) **par étape** ; retry de parsing du plan côté agent ; erreurs LLM non-réessables (4xx) vs réessables (429/5xx/timeout) avec `Retry-After` | V2/S12, `plugin/agent/retry.py`, `plugin/agent/orchestrator.py`, `plugin/agent/agent.py`, `plugin/agent/llm.py` |
 
 ---
 
@@ -232,3 +254,4 @@ smokes QGIS (16 + 10 + 8 + 6 + 4 + 7 checks) — tous verts.
 | 2026-10-08 | S09 terminé : corpus golden (30 cas) + runner hors CI, tests erreur/sécurité, CI Docker qgis/qgis + GitHub Actions, guide utilisateur ; tests (76 pytest + smokes QGIS) ; S10 à démarrer | `tests/golden/corpus.json`, `plugin/agent/golden.py`, `scripts/run_golden.py`, `tests/test_golden_corpus.py`, `tests/test_errors.py`, `Dockerfile.ci`, `.github/workflows/ci.yml`, `docs/guide_utilisateur.md` |
 | 2026-10-08 | S10 terminé : plugin relocalisable, packaging `dist/terangagis-1.0.0.zip`, script d'installation, métadonnées 1.0.0, vérification des 12 critères du MVP ; tests (76 pytest + packaging + smokes QGIS) — **Release MVP** | `plugin/__init__.py`, `plugin/metadata.txt`, `scripts/build_plugin.py`, `scripts/install_plugin.ps1`, `tests/packaging_smoke.py`, `.github/workflows/ci.yml`, `README.md`, `docs/guide_utilisateur.md` |
 | 2026-10-09 | S11 terminé (V2 démarré) : réutilisation des sorties intermédiaires par nom — registre d'artefacts (bridge), résolution de couche + ajout au projet, `GET /v1/artifacts`, prompt de nommage ; tests (83 pytest + smoke artifacts 11/11) ; S12 à démarrer | `plugin/geofunc/artifacts.py`, `plugin/geofunc/layer_resolver.py`, `plugin/bridge/bridge.py`, `plugin/agent/prompts.py`, `tests/test_artifacts.py`, `tests/artifacts_smoke.py`, `README.md`, `docs/architecture.md` |
+| 2026-10-09 | S12 terminé : exécution robuste — classification d'erreurs + backoff, `on_error`/retries par étape, `ExecutionReport` enrichi, retry de parsing du plan, client LLM `retryable`/`Retry-After`, config ; tests (101 pytest + smokes QGIS) ; S13 à démarrer | `plugin/agent/retry.py`, `plugin/agent/orchestrator.py`, `plugin/agent/agent.py`, `plugin/agent/llm.py`, `plugin/agent/journal.py`, `plugin/ui/chat_panel.py`, `plugin/terangagis_plugin.py`, `common/config.py`, `.env.example`, `tests/test_retry.py`, `tests/test_orchestrator_retry.py`, `tests/test_llm_retry.py` |

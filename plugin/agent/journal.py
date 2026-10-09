@@ -38,8 +38,20 @@ class Journal:
         steps = [{'tool': s.tool, 'params': s.params} for s in getattr(plan, 'steps', [])]
         self._record('plan', {'steps': steps})
 
-    def record_execution(self, tool: str, params: dict[str, Any], result: Any) -> None:
-        self._record('execution', {'tool': tool, 'params': params, 'result': result})
+    def record_execution(
+        self,
+        tool: str,
+        params: dict[str, Any],
+        result: Any,
+        attempts: int = 1,
+        error_class: str = '',
+    ) -> None:
+        payload: dict[str, Any] = {'tool': tool, 'params': params, 'result': result}
+        if attempts != 1:
+            payload['attempts'] = attempts
+        if error_class:
+            payload['error_class'] = error_class
+        self._record('execution', payload)
 
     def record_validation(self, report: Any) -> None:
         issues = [

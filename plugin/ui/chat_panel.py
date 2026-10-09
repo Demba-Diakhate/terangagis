@@ -38,17 +38,21 @@ class _ExecWorker(QThread):
     finished_report = pyqtSignal(object, object)
     failed = pyqtSignal(str)
 
-    def __init__(self, orchestrator, plan, layer_crs=None, protected_sources=None) -> None:
+    def __init__(self, orchestrator, plan, layer_crs=None, protected_sources=None, options=None) -> None:
         super().__init__()
         self.orchestrator = orchestrator
         self.plan = plan
         self.layer_crs = layer_crs
         self.protected_sources = protected_sources
+        self.options = dict(options or {})
 
     def run(self) -> None:  # noqa: D401
         try:
             report, exec_report = self.orchestrator.run(
-                self.plan, layer_crs=self.layer_crs, protected_sources=self.protected_sources,
+                self.plan,
+                layer_crs=self.layer_crs,
+                protected_sources=self.protected_sources,
+                **self.options,
             )
         except Exception as e:  # noqa: BLE001
             self.failed.emit(str(e))
@@ -164,7 +168,8 @@ class ChatPanel(QWidget):
             self._reset()
             return
         self.status.setText("Exécution…")
-        self._worker = _ExecWorker(orchestrator, plan)
+        options = getattr(self, 'orchestrator_defaults', None) or {}
+        self._worker = _ExecWorker(orchestrator, plan, options=options)
         self._worker.finished_report.connect(self._on_executed)
         self._worker.failed.connect(self._on_failed)
         self._worker.start()

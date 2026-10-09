@@ -44,6 +44,8 @@ class Settings:
     model: str
     max_retries: int
     timeout: int
+    step_max_retries: int = 1
+    llm_backoff: float = 0.5
 
     @property
     def is_ready(self) -> bool:
@@ -89,8 +91,13 @@ def load_settings(env_file: Path | None = None) -> Settings:
     try:
         max_retries = int(get("TERANGA_LLM_MAX_RETRIES", "2"))
         timeout = int(get("TERANGA_LLM_TIMEOUT", "60"))
+        step_max_retries = int(get("TERANGA_STEP_MAX_RETRIES", "1"))
+        llm_backoff = float(get("TERANGA_LLM_BACKOFF", "0.5"))
     except ValueError as exc:
-        raise ConfigError("TERANGA_LLM_MAX_RETRIES et TERANGA_LLM_TIMEOUT doivent être des entiers") from exc
+        raise ConfigError(
+            "TERANGA_LLM_MAX_RETRIES, TERANGA_STEP_MAX_RETRIES et TERANGA_LLM_TIMEOUT doivent être des entiers ; "
+            "TERANGA_LLM_BACKOFF un nombre"
+        ) from exc
 
     return Settings(
         provider=provider,
@@ -99,4 +106,6 @@ def load_settings(env_file: Path | None = None) -> Settings:
         model=model,
         max_retries=max_retries,
         timeout=timeout,
+        step_max_retries=step_max_retries,
+        llm_backoff=llm_backoff,
     )

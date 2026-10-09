@@ -26,6 +26,16 @@ ajoute la couche produite au projet et renvoie son nom dans le champ `artifact` 
 aucun rechargement manuel de fichier n'est nécessaire. Le registre est consultable
 via `GET /v1/artifacts`.
 
+## Exécution robuste (S12)
+
+Les erreurs sont classées `transient` / `permanent` (`plugin/agent/retry.py`) :
+
+- retries limités avec backoff exponentiel pour les erreurs transitoires, par étape
+  (`TERANGA_STEP_MAX_RETRIES`, `TERANGA_LLM_BACKOFF`) ;
+- politique `stop` (défaut) ou `continue` par étape (`AgentStep.on_error`) ;
+- côté LLM, les 4xx ne sont pas réessayés, 429/5xx/timeout le sont (avec `Retry-After`) ;
+- l'agent redemande une correction si le plan n'est pas exploitable (`parse_retries`).
+
 ## Prérequis
 
 | Outil | Version |

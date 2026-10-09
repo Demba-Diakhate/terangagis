@@ -50,17 +50,27 @@ class TerangaGISPlugin:
 
     def _wire_agent(self):
         try:
+            from common.config import load_settings
             from mcp.bridge_client import BridgeClient
             from plugin.agent.agent import GeoAgent
             from plugin.agent.journal import Journal
             from plugin.agent.orchestrator import Orchestrator
             client = BridgeClient(self.bridge.base_url, self.bridge.access_token)
+            settings = load_settings()
             self.journal = Journal()
-            self.agent = GeoAgent(journal=self.journal)
-            self.orchestrator = Orchestrator(client, journal=self.journal)
+            self.agent = GeoAgent(journal=self.journal, parse_retries=1)
+            self.orchestrator = Orchestrator(
+                client,
+                journal=self.journal,
+            )
+            self.orchestrator_defaults = {
+                'max_retries': settings.step_max_retries,
+                'backoff_base': settings.llm_backoff,
+            }
             if self.panel is not None:
                 self.panel.agent = self.agent
                 self.panel.orchestrator = self.orchestrator
+                self.panel.orchestrator_defaults = self.orchestrator_defaults
             self._set_status("Prêt. Saisissez une instruction en français.")
         except Exception as e:  # noqa: BLE001
             self.agent = None

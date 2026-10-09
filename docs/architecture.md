@@ -57,6 +57,7 @@ Données SIG + journal SQLite (plugin/core/)
 |---|---|---|
 | RT1 | Processing-first | `plugin/geofunc/` |
 | RT3 | Dry-run avant exécution | `plugin/agent/` (plan) |
+| R3 | Retries limités + backoff (erreurs transitoires), politique par étape | `plugin/agent/retry.py`, `plugin/agent/orchestrator.py`, `plugin/agent/llm.py` |
 | RT6 | Sorties anti-collision | `plugin/geofunc/` (écritures) |
 | RT7 | Sanitisation du contexte LLM | `plugin/agent/` |
 | RT9 | `compat.py` pour toute API QGIS | `plugin/core/compat.py` |
