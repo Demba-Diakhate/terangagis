@@ -6,12 +6,12 @@
 
 | Champ | Valeur |
 |---|---|
-| **Sprint courant** | S16 — V3 Data Intelligence (profilage + recommandations) |
-| **Statut du sprint** | **FAIT** |
+| **Sprint courant** | S17 — V3 étendu (auto-identification couche pertinente) |
+| **Sprint courant** | S17 — V3 étendu (auto-identification couche pertinente) |
 | **Tâche en cours** | — |
-| **Prochaine action** | V3 à finaliser/étendre ou définir S17 selon roadmap CDC §30 |
+| **Prochaine action** | V3 étendu terminé ; définir S18 selon roadmap CDC §30 |
 | **Bloqueurs** | CI Docker (RT8) non exécutée localement (à valider au premier push) ; tests LLM live (clé absente — H1) |
-| **Sprints terminés** | S00, S01, S02, S03, S04, S05, S06, S07, S08, S09, S10, S11, S12, S13, S14, S15, S16 |
+| **Sprints terminés** | S00, S01, S02, S03, S04, S05, S06, S07, S08, S09, S10, S11, S12, S13, S14, S15, S16, S17 |
 
 ---
 
@@ -41,6 +41,7 @@
 | S14 | Contrôle d'exécution : progression + annulation | **FAIT** | 2026-10-09 | Callbacks de progression + annulation coopérative (`should_cancel`) |
 | S15 | Questions de clarification | **FAIT** | 2026-10-09 | Pseudo-outil `request_clarification` + `AgentPlan.clarification` + panneau |
 | S16 | V3 Data Intelligence : profilage + recommandations | **FAIT** | 2026-10-09 | Profil de couche (profile=true) + recommandations classées/dédupliquées ; bridge + MCP ; tests unitaires + smoke QGIS |
+| S17 | V3 étendu : Auto-identification couche pertinente + clarification proactive | **FAIT** | 2026-10-09 | Matcher heuristique + resolve_best + bridge /v1/layers/match + prompts |
 
 Légende : `À FAIRE` | `EN COURS` | `FAIT` | `BLOQUÉ`
 
@@ -322,3 +323,4 @@ smokes QGIS (16 + 10 + 8 + 6 + 4 + 7 checks) — tous verts.
 | 2026-10-09 | S14 terminé : contrôle d'exécution — progression par étape (`on_step_start`/`on_step_finished`) et annulation coopérative (`should_cancel`, bouton Annuler, `ExecutionReport.cancelled`) ; tests (120 pytest + smoke execution_control 5/5) ; S15 à démarrer | `plugin/agent/orchestrator.py`, `plugin/agent/conversation.py`, `plugin/ui/chat_panel.py`, `plugin/ui/formatting.py`, `tests/test_orchestrator_control.py`, `tests/execution_control_smoke.py`, `README.md`, `docs/architecture.md` |
 | 2026-10-09 | S15 terminé : questions de clarification — pseudo-outil `request_clarification` (opt-in, `AgentPlan.clarification`) et branchement panneau chat (question mémorisée + réponse traitée comme tour suivant) ; tests (126 pytest + smoke clarification 3/3) ; S16 à démarrer | `plugin/agent/tools_schema.py`, `plugin/agent/agent.py`, `plugin/agent/prompts.py`, `plugin/ui/chat_panel.py`, `tests/test_clarification.py`, `tests/clarification_smoke.py`, `README.md`, `docs/architecture.md` |
 | 2026-10-09 | S16 terminé : V3 Data Intelligence — get_layer_info(profile=true), profil par champ (stats/qualité) + recommandations dédupliquées ; bridge + MCP + formatage + prompts ; tests (146 pytest) ; S17 à définir | `plugin/geofunc/profiling.py`, `plugin/geofunc/qgis_profile.py`, `plugin/agent/recommend.py`, `plugin/geofunc/tools_read_complete.py`, `plugin/bridge/bridge.py`, `mcp/server.py`, `plugin/ui/formatting.py`, `plugin/agent/prompts.py`, `tests/test_profiling.py`, `tests/test_recommend.py`, `tests/profiling_smoke.py`, `tests/test_formatting.py` |
+| 2026-10-09 | S17 terminé : V3 étendu — auto-identification couche pertinente (matcher heuristique, `resolve_best`, endpoint bridge `/v1/layers/match`) + orientation prompt ; tests (154 pytest + smoke layer_match) ; S18 à définir | `plugin/geofunc/layer_matcher.py`, `plugin/geofunc/layer_resolver.py`, `plugin/bridge/bridge.py`, `plugin/agent/prompts.py`, `tests/test_layer_matcher.py`, `tests/layer_match_smoke.py` |
