@@ -296,6 +296,9 @@ class _BridgeRequestHandler(BaseHTTPRequestHandler):
         if path == '/v1/artifacts':
             self._handle_artifacts()
             return
+        if path == '/v1/layers/match' or self.path == '/v1/layers/match':
+            self._handle_layers_match()
+            return
         self._send_json(404, BridgeError('not_found', f'Route introuvable : {self.path}').to_dict())
 
     def do_POST(self) -> None:
@@ -316,6 +319,37 @@ class _BridgeRequestHandler(BaseHTTPRequestHandler):
     def _handle_layers(self) -> None:
         try:
             res = self.server.invoker.invoke(_get_layers_list_sync)
+            self._send_json(200, {'ok': True, 'data': res})
+        except Exception as e:
+            self._send_json(500, BridgeError('internal', str(e)).to_dict())
+
+    def _handle_layers_match(self) -> None:
+        try:
+            length = int(self.headers.get('Content-Length', 0) or 0)
+            raw = self.rfile.read(length) if length else b'{}'
+            payload = json.loads(raw.decode('utf-8') or '{}')
+        except Exception as e:
+            self._send_json(400, BridgeError('bad_request', f'Corps JSON invalide : {e}').to_dict())
+            return
+        instruction = payload.get('instruction') or ''
+        try:
+            from plugin.geofunc.layer_resolver import resolve_best
+            res = self.server.invoker.invoke(lambda: resolve_best(str(instruction)))
+            self._send_json(200, {'ok': True, 'data': res})
+        except Exception as e:
+            self._send_json(500, BridgeError('internal', str(e)).to_dict())
+
+        try:
+            length = int(self.headers.get('Content-Length', 0) or 0)
+            raw = self.rfile.read(length) if length else b'{}'
+            payload = json.loads(raw.decode('utf-8') or '{}')
+        except Exception as e:
+            self._send_json(400, BridgeError('bad_request', f'Corps JSON invalide : {e}').to_dict())
+            return
+        instruction = payload.get('instruction') or ''
+        try:
+            from plugin.geofunc.layer_resolver import resolve_best
+            res = self.server.invoker.invoke(lambda: resolve_best(str(instruction)))
             self._send_json(200, {'ok': True, 'data': res})
         except Exception as e:
             self._send_json(500, BridgeError('internal', str(e)).to_dict())
