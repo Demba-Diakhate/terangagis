@@ -131,6 +131,25 @@ Panneau chat (plugin/ui/chat_panel.py)
 - `plugin/ui/chat_panel.py` : `_ExecWorker.step_started` + `cancel()` ; `format_execution`
   affiche « (exécution annulée par l'utilisateur) ».
 
+## Questions de clarification (S15 — V2)
+
+```text
+GeoAgent.plan(...)
+    ├─ outils = openai_tools(include_clarification=True)   # 16 outils + request_clarification
+    └─ _parse(message)
+          ├─ request_clarification → AgentPlan(clarification="…", steps=[])
+          └─ outils normaux        → AgentPlan(steps=[...])
+```
+
+- `plugin/agent/tools_schema.py` : pseudo-outil `request_clarification` (`question`),
+  **opt-in** via `openai_tools(include_clarification=True)` ; il reste hors de
+  `TOOL_NAMES` (donc **non exposé par le serveur MCP**).
+- `plugin/agent/agent.py` : `AgentPlan.clarification` ; si l'appel de clarification est
+  présent, il est prioritaire et le plan ne contient aucune étape.
+- `plugin/ui/chat_panel.py` : affiche « Question : … », enregistre la question dans la
+  `Conversation`, puis la réponse de l'utilisateur relance la planification avec le
+  contexte complet.
+
 ## Conventions de code
 - Aucune dépendance externe dans `plugin/` au-delà de ce que QGIS embarque.
 - `common/` ne doit jamais importer `qgis.*` (permet les tests sans QGIS).

@@ -175,6 +175,12 @@ class ChatPanel(QWidget):
     def _on_plan(self, plan) -> None:
         self._plan = plan
         self.conversation.add_user(self._instruction)
+        if getattr(plan, 'clarification', None):
+            self.conversation.add_assistant(plan.clarification)
+            self._append(f"Question : {plan.clarification}")
+            self._reset()
+            self.status.setText("En attente de votre réponse…")
+            return
         self._append(format_plan(plan))
         if not plan.steps:
             self._append("Aucune action à exécuter.")

@@ -55,6 +55,16 @@ Les erreurs sont classées `transient` / `permanent` (`plugin/agent/retry.py`) :
   est coopératif — une étape Processing déjà lancée va jusqu'au bout — puis le rapport
   porte `cancelled=True` et l'interface affiche « Exécution annulée. ».
 
+## Questions de clarification (S15)
+
+- Quand une instruction est ambiguë (couche, paramètre, distance/unité ou sortie
+  manquante), l'agent utilise le pseudo-outil `request_clarification` pour poser
+  **une seule** question ciblée au lieu de deviner. Le plan retourné porte alors
+  `clarification` renseigné et **aucune étape**.
+- Le panneau affiche « Question : … », enregistre la question dans la mémoire de
+  session, puis la réponse de l'utilisateur est traitée comme le tour suivant :
+  l'agent produit enfin le plan d'outils avec le contexte complet.
+
 ## Prérequis
 
 | Outil | Version |

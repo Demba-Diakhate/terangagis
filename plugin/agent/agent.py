@@ -1,17 +1,19 @@
 """Agent IA : planification d'appels d'outils à partir d'une instruction.
 
 S04 : planification uniquement (aucune exécution — voir S05).
+S15 : l'agent peut demander une clarification au lieu de deviner
+(`AgentPlan.clarification`), via le pseudo-outil `request_clarification`.
 """
 from __future__ import annotations
 
 import json
 from dataclasses import dataclass, field
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from .llm import LLMClient, LLMError
 from .prompts import SYSTEM_PROMPT
 from .sanitization import sanitize_text
-from .tools_schema import TOOL_NAMES, openai_tools
+from .tools_schema import CLARIFICATION_TOOL_NAME, TOOL_NAMES, openai_tools
 
 
 @dataclass
@@ -26,6 +28,7 @@ class AgentStep:
 class AgentPlan:
     steps: List[AgentStep] = field(default_factory=list)
     assistant_text: str = ''
+    clarification: Optional[str] = None
 
 
 class AgentError(Exception):
@@ -45,6 +48,9 @@ class GeoAgent:
         historique est injecté avant la demande courante (S13). Si la réponse du
         LLM n'est pas exploitable (JSON d'arguments invalide, outil inconnu),
         l'agent redemande une correction, au plus `parse_retries` fois (règle R3).
+
+        Le LLM peut aussi demander une clarification (S15) : le plan retourné a
+        alors `clarification` renseigné et aucune étape.
         """
         if not user_query or not user_query.strip():
             raise AgentError('Instruction vide.')
@@ -74,7 +80,7 @@ class GeoAgent:
                     ),
                 })
             try:
-                message = self.llm.chat(messages, tools=openai_tools())
+                message = self.llm.chat(messages, tools=openai_tools(include_clarification=True))
             except LLMError as e:
                 raise AgentError(str(e)) from e
 
@@ -158,6 +164,9 @@ class GeoAgent:
         for call in message.get('tool_calls') or []:
             function = call.get('function') or {}
             name = function.get('name')
+            if name == CLARIFICATION_TOOL_NAME:
+                question = GeoAgent._clarification_question(function.get('arguments'))
+                return AgentPlan(clarification=question, assistant_text=message.get('content') or '')
             if not name or name not in TOOL_NAMES:
                 raise AgentError(f"Appel d'outil invalide : {name!r}")
             raw_args = function.get('arguments') or '{}'
@@ -167,3 +176,20 @@ class GeoAgent:
                 raise AgentError(f"Arguments JSON invalides pour {name}: {e}") from e
             steps.append(AgentStep(tool=name, params=params))
         return AgentPlan(steps=steps, assistant_text=message.get('content') or '')
+
+    @staticmethod
+    def _clarification_question(raw_arguments: Any) -> str:
+        """Extrait et nettoie la question d'un appel `request_clarification`."""
+        if isinstance(raw_arguments, str):
+            try:
+                arguments = json.loads(raw_arguments) if raw_arguments else {}
+            except json.JSONDecodeError as e:
+                raise AgentError(f'Arguments de clarification invalides : {e}') from e
+        elif isinstance(raw_arguments, dict):
+            arguments = raw_arguments
+        else:
+            arguments = {}
+        question = str(arguments.get('question', '') or '').strip()
+        if not question:
+            raise AgentError('Clarification demandée sans question.')
+        return sanitize_text(question, max_length=500).strip()
