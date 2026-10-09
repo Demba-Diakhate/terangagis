@@ -6,11 +6,11 @@
 
 | Champ | Valeur |
 |---|---|
-| **Sprint courant** | S22 — V5 GeoAI Sénégal (sources SEN + workflows) |
-| **Sprint courant** | S22 — V5 GeoAI Sénégal (sources SEN + workflows) |
+| **Sprint courant** | S23 — V5 avancée (enrichissement SEN + workflows) |
+| **Sprint courant** | S23 — V5 avancée (enrichissement SEN + workflows) |
 | **Tâche en cours** | — |
 | **Bloqueurs** | CI Docker (RT8) non exécutée localement (à valider au premier push) ; tests LLM live (clé absente — H1) |
-| **Sprints terminés** | S00, S01, S02, S03, S04, S05, S06, S07, S08, S09, S10, S11, S12, S13, S14, S15, S16, S17, S18, S19, S20, S21, S22 |
+| **Sprints terminés** | S00, S01, S02, S03, S04, S05, S06, S07, S08, S09, S10, S11, S12, S13, S14, S15, S16, S17, S18, S19, S20, S21, S22, S23 |
 
 ---
 
@@ -330,3 +330,4 @@ smokes QGIS (16 + 10 + 8 + 6 + 4 + 7 checks) — tous verts.
 | 2026-10-09 | S21 terminé : V4 finalisation — batch (items + summary, gestion erreurs) ; 157 tests verts ; V4 clôturé | `plugin/batch.py`, `tests/test_batch.py` |
 | 2026-10-09 | S22 démarré : V5 GeoAI Sénégal — catalogue senegal_sources.json + senegal_catalog.py + test ; 158 tests verts | `plugin/data/senegal_sources.json`, `plugin/senegal_catalog.py`, `tests/test_senegal_catalog.py` |
 | 2026-10-09 | S22 terminé : V5 GeoAI Sénégal — catalogue + workflows SEN + tests ; 159 tests verts ; V5 à compléter/avancer | `plugin/senegal_catalog.py`, `plugin/senegal_workflows.py`, `plugin/data/senegal_sources.json`, `tests/test_senegal_catalog.py`, `tests/test_senegal_workflows.py` |
+| 2026-10-09 | S23 terminé : V5 avancée — helper catalogue SEN + workflow extra SEN ; 161 tests verts ; V5 enrichi | `plugin/senegal_helpers.py`, `plugin/senegal_workflows_extra.py`, `tests/test_senegal_helpers.py`, `tests/test_senegal_workflows_extra.py` |
