@@ -6,11 +6,11 @@
 
 | Champ | Valeur |
 |---|---|
-| **Sprint courant** | S19 — V3 finalisation (UX validation + tests) |
-| **Sprint courant** | S19 — V3 finalisation (UX validation + tests) |
+| **Sprint courant** | S20 — V4 Automation (batch + workflows réutilisables) |
+| **Sprint courant** | S20 — V4 Automation (batch + workflows réutilisables) |
 | **Tâche en cours** | — |
 | **Bloqueurs** | CI Docker (RT8) non exécutée localement (à valider au premier push) ; tests LLM live (clé absente — H1) |
-| **Sprints terminés** | S00, S01, S02, S03, S04, S05, S06, S07, S08, S09, S10, S11, S12, S13, S14, S15, S16, S17, S18, S19 |
+| **Sprints terminés** | S00, S01, S02, S03, S04, S05, S06, S07, S08, S09, S10, S11, S12, S13, S14, S15, S16, S17, S18, S19, S20 |
 
 ---
 
@@ -325,3 +325,4 @@ smokes QGIS (16 + 10 + 8 + 6 + 4 + 7 checks) — tous verts.
 | 2026-10-09 | S17 terminé : V3 étendu — auto-identification couche pertinente (matcher heuristique, `resolve_best`, endpoint bridge `/v1/layers/match`) + orientation prompt ; tests (154 pytest + smoke layer_match) ; S18 à définir | `plugin/geofunc/layer_matcher.py`, `plugin/geofunc/layer_resolver.py`, `plugin/bridge/bridge.py`, `plugin/agent/prompts.py`, `tests/test_layer_matcher.py`, `tests/layer_match_smoke.py` |
 | 2026-10-09 | S18 terminé : V3 étendu — politique de confirmation renforcée (niveaux/critique), intégration orchestrateur + UI (QMessageBox), guidance prompt ; tests (154 pytest) ; S19 à définir | `plugin/agent/policy.py`, `plugin/ui/chat_panel.py`, `plugin/agent/prompts.py` |
 | 2026-10-09 | S19 terminé : V3 finalisation — dialogue de confirmation structuré (niveau/outil/params) ; tests (154 pytest) ; S20 à définir | `plugin/ui/chat_panel.py` |
+| 2026-10-09 | S20 démarré : V4 Automation — workflows réutilisables (save/load JSON) ; 156 tests verts | `plugin/workflows_io.py`, `tests/test_workflows_io.py` |
