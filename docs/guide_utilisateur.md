@@ -60,6 +60,17 @@ Le fichier `.env` est ignoré par Git : ne jamais committer de secret.
 | Accessibilité aux routes | `routes`, `villages` | `buffer` (5 km) → `clip` |
 | Nettoyage de données GPS | `gps` | `fix_geometries` → `remove_duplicates` → `save_layer` |
 | Accessibilité aux postes de santé | `villages`, `sante` | `distance_analysis` (euclidien) → `select_by_attribute` (> 10 km) |
+| Analyse route/commune (Sénégal) | `routes`, `communes` | `buffer` (5 km) → `clip` |
+| Proximité hydrographie (Sénégal) | `hydro`, `zones` | `buffer` (2 km) → `clip` |
+
+### Contexte Sénégal
+
+L'agent connaît un catalogue de **sources recommandées pour le Sénégal**
+(communes, réseau routier, hydrographie ; CRS suggéré EPSG:32628). Demandez-lui
+par exemple : « Quelles sources de données sont disponibles pour le Sénégal ? »
+(tool `find_senegal_sources`). Le catalogue décrit des métadonnées : chargez vos
+couches dans le projet avant de lancer les workflows Sénégal (les rôles `routes`,
+`communes`, `hydro`, `zones` correspondent aux couches chargées).
 
 ## 6. Sécurité et bonnes pratiques
 

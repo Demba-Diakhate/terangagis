@@ -27,6 +27,7 @@ from .tools_analyze import (
     DistanceAnalysis,
 )
 from .tools_output import SaveLayer, ExportMapPNG
+from .tools_senegal import FindSenegalSources
 
 _TOOL_CLASSES = [
     GetProjectInfo,
@@ -45,6 +46,7 @@ _TOOL_CLASSES = [
     DistanceAnalysis,
     SaveLayer,
     ExportMapPNG,
+    FindSenegalSources,
 ]
 
 

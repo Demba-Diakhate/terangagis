@@ -136,6 +136,39 @@ WORKFLOWS: List[Workflow] = [
     ),
 ]
 
+# Workflows Sénégal (S25) : builders purs dans `senegal.py`, enregistrement ici.
+from .senegal import (  # noqa: E402  (registré après les définitions du module)
+    SEN_HYDRO_BUFFER_DISTANCE,
+    SEN_ROUTE_DISTANCE_THRESHOLD,
+    build_sen_hydro_proximite,
+    build_sen_route_commune,
+)
+
+WORKFLOWS.extend([
+    Workflow(
+        key='sen_route_commune',
+        title='Analyse route/commune (Sénégal)',
+        instruction="Identifie les communes sénégalaises situées à moins de 5 km du réseau routier.",
+        required_layers=['routes', 'communes'],
+        builder=build_sen_route_commune,
+        description=(
+            f"Tampon euclidien de {SEN_ROUTE_DISTANCE_THRESHOLD} m autour des "
+            "routes, puis découpage des communes (accessibilité, RT5)."
+        ),
+    ),
+    Workflow(
+        key='sen_hydro_proximite',
+        title='Proximité hydrographie (Sénégal)',
+        instruction="Délimite les zones situées à moins de 2 km d'un cours d'eau au Sénégal.",
+        required_layers=['hydro', 'zones'],
+        builder=build_sen_hydro_proximite,
+        description=(
+            f"Tampon de {SEN_HYDRO_BUFFER_DISTANCE} m autour des cours d'eau, "
+            "puis découpage des zones d'étude."
+        ),
+    ),
+])
+
 _BY_KEY = {w.key: w for w in WORKFLOWS}
 
 

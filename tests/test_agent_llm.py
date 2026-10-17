@@ -19,9 +19,9 @@ def _settings(key="k"):
     )
 
 
-def test_openai_tools_has_16():
+def test_openai_tools_has_17():
     tools = openai_tools()
-    assert len(tools) == 16
+    assert len(tools) == 17
     assert all(t["type"] == "function" for t in tools)
     names = {t["function"]["name"] for t in tools}
     assert "buffer" in names

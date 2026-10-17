@@ -31,6 +31,9 @@
     { "id": "export_capture", "instruction": "Produis une capture de la carte actuelle.", "expected_tools": ["export_map"] },
     { "id": "wf_road_accessibility", "instruction": "Identifie les villages situés à moins de 5 km d'une route.", "expected_tools": ["buffer", "clip"] },
     { "id": "wf_gps_cleanup", "instruction": "Nettoie cette couche GPS et corrige les géométries.", "expected_tools": ["fix_geometries", "remove_duplicates", "save_layer"] },
-    { "id": "wf_health_accessibility", "instruction": "Identifie les villages situés à plus de 10 km d'un poste de santé.", "expected_tools": ["distance_analysis", "select_by_attribute"] }
+    { "id": "wf_health_accessibility", "instruction": "Identifie les villages situés à plus de 10 km d'un poste de santé.", "expected_tools": ["distance_analysis", "select_by_attribute"] },
+    { "id": "wf_sen_route_commune", "instruction": "Identifie les communes sénégalaises situées à moins de 5 km du réseau routier.", "expected_tools": ["buffer", "clip"] },
+    { "id": "wf_sen_hydro_proximite", "instruction": "Délimite les zones situées à moins de 2 km d'un cours d'eau au Sénégal.", "expected_tools": ["buffer", "clip"] },
+    { "id": "sen_catalogue", "instruction": "Quelles sources de données géospatiales sont disponibles pour le Sénégal ?", "expected_tools": ["find_senegal_sources"] }
   ]
 }

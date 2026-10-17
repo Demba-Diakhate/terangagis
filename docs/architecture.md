@@ -135,7 +135,7 @@ Panneau chat (plugin/ui/chat_panel.py)
 
 ```text
 GeoAgent.plan(...)
-    ├─ outils = openai_tools(include_clarification=True)   # 16 outils + request_clarification
+    ├─ outils = openai_tools(include_clarification=True)   # 17 outils + request_clarification
     └─ _parse(message)
           ├─ request_clarification → AgentPlan(clarification="…", steps=[])
           └─ outils normaux        → AgentPlan(steps=[...])

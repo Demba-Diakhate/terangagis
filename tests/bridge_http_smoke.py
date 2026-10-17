@@ -74,7 +74,7 @@ def main() -> int:
 
     check('worker_termine', not t.is_alive(), out.get('error'))
     check('health', out.get('health', {}).get('ok') is True)
-    check('tools_count_16', len(out.get('tools', {}).get('data', [])) == 16)
+    check('tools_count_17', len(out.get('tools', {}).get('data', [])) == 17)
     check('layers', any(l['name'] == 'pts_smoke' for l in out.get('layers', {}).get('data', [])))
     check('layer_info', out.get('info', {}).get('ok') is True)
     check('inspect_exec', out.get('exec', {}).get('ok') is True)

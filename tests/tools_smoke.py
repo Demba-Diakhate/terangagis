@@ -1,4 +1,4 @@
-"""Balayage des 16 outils SIG (PyQGIS requis).
+"""Balayage des 17 outils SIG (PyQGIS requis).
 
 Usage :
     "C:/Program Files/QGIS 3.44.15/bin/python-qgis-ltr.bat" tests/tools_smoke.py
@@ -71,6 +71,7 @@ def main() -> int:
     check('distance_analysis', run_tool('distance_analysis', {'from': 'pts', 'to': 'pts2'}))
     check('save_layer', run_tool('save_layer', {'layer': 'pts', 'path': os.path.join(os.environ['TERANGA_OUTPUT_DIR'], 'saved_pts.gpkg')}))
     check('export_map (sans iface -> erreur attendue)', run_tool('export_map', {}), expect_ok=False)
+    check('find_senegal_sources', run_tool('find_senegal_sources', {}))
 
     app.quit()
     return 1 if failures else 0

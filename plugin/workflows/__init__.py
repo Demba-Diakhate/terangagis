@@ -1,11 +1,13 @@
-"""Workflows métier TerangaGIS (S08).
+"""Workflows métier TerangaGIS (S08 + Sénégal S25).
 
-Trois scénarios de démonstration, exprimés comme des plans d'outils
+Cinq scénarios de démonstration, exprimés comme des plans d'outils
 (`AgentPlan`) reproductibles, exécutables sur des jeux de données de test :
 
 1. Accessibilité aux routes (tampon + découpage)  → `road_accessibility`
 2. Nettoyage de données GPS (correction + doublons + export) → `gps_cleanup`
 3. Accessibilité aux postes de santé (distances euclidiennes) → `health_accessibility`
+4. Analyse route/commune Sénégal (distances + sélection) → `sen_route_commune`
+5. Proximité hydrographie Sénégal (tampon + découpage) → `sen_hydro_proximite`
 """
 from .definitions import (
     WORKFLOWS,

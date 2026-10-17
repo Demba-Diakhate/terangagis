@@ -32,10 +32,10 @@ def _call(name, arguments):
 
 
 def test_clarification_tool_defaults_off():
-    assert len(openai_tools()) == 16
+    assert len(openai_tools()) == 17
     tools = openai_tools(include_clarification=True)
     names = {t["function"]["name"] for t in tools}
-    assert len(tools) == 17
+    assert len(tools) == 18
     assert CLARIFICATION_TOOL_NAME in names
     assert clarification_tool()["function"]["parameters"]["required"] == ["question"]
 

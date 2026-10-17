@@ -2,7 +2,7 @@
 
 Agent GeoAI pour QGIS : réalise des tâches SIG à partir d'instructions en langage naturel.
 
-> **Statut du projet : MVP livré (S00–S10, version 1.0.0) ; V2 « Workflow Agent » en cours (S14)** — voir [`PROJECT_STATUS.md`](PROJECT_STATUS.md)
+> **Statut du projet : MVP livré (S00–S10, version 1.0.0) ; V5 « GeoAI Sénégal » intégrée de bout en bout (S25)** — voir [`PROJECT_STATUS.md`](PROJECT_STATUS.md)
 > **Document de référence :** cahier des charges combiné V2.0 (`../TerangaGIS_Cahier_des_charges_Combine_V2.md`)
 > **Guide utilisateur :** [`docs/guide_utilisateur.md`](docs/guide_utilisateur.md)
 
@@ -65,6 +65,20 @@ Les erreurs sont classées `transient` / `permanent` (`plugin/agent/retry.py`) :
   session, puis la réponse de l'utilisateur est traitée comme le tour suivant :
   l'agent produit enfin le plan d'outils avec le contexte complet.
 
+## Socle Sénégal (S25 — V5 intégrée de bout en bout)
+
+- Outil `find_senegal_sources` (17ᵉ outil, exposé via MCP et le tool calling) :
+  catalogue des sources recommandées pour le Sénégal (communes, réseau routier,
+  hydrographie) avec mots-clés et CRS suggéré (EPSG:32628). Le catalogue fournit
+  des **métadonnées** : les couches sont chargées par l'utilisateur dans son projet.
+- Deux workflows métier Sénégal enregistrés avec les autres (`plugin/workflows/senegal.py`) :
+  - « Analyse route/commune » (`sen_route_commune`) : tampon euclidien 5 km autour
+    des routes → découpage des communes dans le périmètre ;
+  - « Proximité hydrographie » (`sen_hydro_proximite`) : tampon 2 km autour des
+    cours d'eau → découpage des zones d'étude.
+- L'agent connaît le contexte Sénégal via le prompt système (recherche de sources
+  + ordres d'appels des deux workflows).
+
 ## Prérequis
 
 | Outil | Version |
@@ -83,7 +97,7 @@ terangagis/
 ├── plugin/              # plugin QGIS (racine = dossier installé dans QGIS)
 │   ├── metadata.txt     # qgisMinimumVersion=3.40
 │   ├── core/            # configuration, erreurs, compatibilité
-│   ├── geofunc/         # outils SIG PyQGIS + catalogue (16 outils)
+│   ├── geofunc/         # outils SIG PyQGIS + catalogue (17 outils)
 │   ├── bridge/          # serveur HTTP local (jeton de session)
 │   ├── agent/           # LLM, planification, validation, orchestrateur, journal
 │   ├── workflows/       # 3 workflows métier (S08)

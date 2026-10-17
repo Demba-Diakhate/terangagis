@@ -25,11 +25,20 @@ Règles :
   (plusieurs candidats plausibles), utilise `request_clarification` pour poser
   **une seule** question ciblée (préciser quelle couche utiliser) plutôt que
   d'exécuter une opération destructive.
+- Contexte Sénégal : `find_senegal_sources` renvoie le catalogue de sources
+  recommandées pour le Sénégal (communes, réseau routier, hydrographie ; CRS
+  suggéré EPSG:32628). Utilise-le pour orienter l'utilisateur lorsqu'il cherche
+  des données sénégalaises. Le catalogue ne fournit que des métadonnées : les
+  couches doivent être chargées dans le projet avant toute analyse.
 
 Workflows de référence (ordres d'appels attendus) :
 - « Accessibilité aux routes » : buffer(5 km sur les routes) → clip(villages dans le tampon).
 - « Nettoyage de données GPS » : fix_geometries → remove_duplicates(id) → save_layer.
 - « Accessibilité aux postes de santé » : distance_analysis(villages ↔ postes, euclidien)
   → select_by_attribute(distance > 10 km).
+- « Analyse route/commune (Sénégal) » : buffer(5 km sur les routes)
+  → clip(communes dans le tampon).
+- « Proximité hydrographie (Sénégal) » : buffer(2 km sur les cours d'eau)
+  → clip(zones dans le tampon).
 - Respecte la politique de confirmation : les opérations qui écrivent ou modifient des données doivent être confirmées avant exécution.
 """

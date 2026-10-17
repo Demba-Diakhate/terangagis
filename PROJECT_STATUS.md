@@ -2,15 +2,14 @@
 
 > **Source de vérité de l'avancement.** Toute session de travail commence par la lecture de ce fichier et se termine par sa mise à jour. Règles : `AGENTS.md`.
 
-**Dernière mise à jour :** 2026-10-09
+**Dernière mise à jour :** 2026-10-17
 
 | Champ | Valeur |
 |---|---|
-| **Sprint courant** | S24 — V5 finalisation (consolidation) |
-| **Sprint courant** | S24 — V5 finalisation (consolidation) |
-| **Tâche en cours** | — |
+| **Sprint courant** | S25 — V6 prérequis : intégration du socle Sénégal |
+| **Tâche en cours** | — (S25 terminé) |
 | **Bloqueurs** | CI Docker (RT8) non exécutée localement (à valider au premier push) ; tests LLM live (clé absente — H1) |
-| **Sprints terminés** | S00, S01, S02, S03, S04, S05, S06, S07, S08, S09, S10, S11, S12, S13, S14, S15, S16, S17, S18, S19, S20, S21, S22, S23, S24 |
+| **Sprints terminés** | S00, S01, S02, S03, S04, S05, S06, S07, S08, S09, S10, S11, S12, S13, S14, S15, S16, S17, S18, S19, S20, S21, S22, S23, S24, S25 |
 
 ---
 
@@ -44,23 +43,38 @@
 
 Légende : `À FAIRE` | `EN COURS` | `FAIT` | `BLOQUÉ`
 
+### V6 — GeoAI avancé (roadmap CDC §30)
+
+| Sprint | Intitulé | Statut | DoD vérifiée le | Notes |
+|---|---|---|---|---|
+| S25 | Intégration du socle Sénégal (V5→V6) | **FAIT** | 2026-10-17 | Outil `find_senegal_sources` (17ᵉ outil, MCP + tool calling) ; workflows SEN exécutables (`sen_route_commune`, `sen_hydro_proximite`) ; prompts enrichis |
+| S26 | Inspection raster (socle V6) | À FAIRE | — | `raster_info`, support raster artefacts/matcher, `default_output_ext` |
+| S27 | MNT / relief | À FAIRE | — | `slope`, `aspect`, `hillshade` (Processing) |
+| S28 | Télédétection / NDVI | À FAIRE | — | `raster_calculator`, `ndvi`, `clip_raster`, `reproject_raster` |
+| S29 | Changement + statistiques zonales | À FAIRE | — | `change_detection`, `zonal_statistics` |
+| S30 | Finalisation V6 | À FAIRE | — | Workflows démo SEN raster, runner raster-aware, release 1.1.0 |
+
 ---
 
-## Détail du sprint courant — S15 Questions de clarification
+## Détail du sprint courant — S25 Intégration du socle Sénégal
 
-**Objectif :** lorsqu'une instruction est ambiguë (couche, paramètre, distance/unité ou sortie manquante), l'agent pose **une seule** question ciblée au lieu de deviner ; la réponse de l'utilisateur est alors traitée comme le tour suivant, et l'agent produit enfin le plan d'outils.
+**Objectif :** rendre le catalogue et les workflows Sénégal (V5) utilisables de bout en bout en langage naturel (agent, MCP, prompt), prérequis de V6.
 
-**DoD :** l'agent peut retourner un plan portant `clarification` (sans étape) via le pseudo-outil `request_clarification` (non exposé par MCP) ; le panneau affiche la question, la mémorise dans la conversation, puis exécute le plan après réponse ; tests verts.
+**DoD :** l'agent peut chercher une source SEN (`find_senegal_sources`, exposé par MCP) et exécuter les workflows SEN convertis ; système de prompt enrichi ; tests verts.
 
 | ID | Tâche | Statut | Notes |
 |---|---|---|---|
-| S15-T1 | Pseudo-outil `request_clarification` (opt-in) | FAIT | `plugin/agent/tools_schema.py` (`clarification_tool`, `openai_tools(include_clarification=True)`) |
-| S15-T2 | Parsing de la clarification (`AgentPlan.clarification`) | FAIT | `plugin/agent/agent.py` (`_parse`, `_clarification_question`) |
-| S15-T3 | Guidage du prompt système | FAIT | `plugin/agent/prompts.py` |
-| S15-T4 | Branchement panneau chat (question + mémoire de session) | FAIT | `plugin/ui/chat_panel.py` (`_on_plan`) |
-| S15-T5 | Tests | FAIT | `tests/test_clarification.py` (6), `tests/clarification_smoke.py` (3) |
+| S25-T1 | Outil pur `find_senegal_sources` (recherche catalogue SEN) | FAIT | `plugin/geofunc/tools_senegal.py`, `catalog.py`, `mcp/server.py` |
+| S25-T2 | Workflows SEN exécutables (`sen_route_commune`, `sen_hydro_proximite`) | FAIT | `plugin/workflows/senegal.py`, enregistrés dans `definitions.py` |
+| S25-T3 | Enrichissement du prompt système (catalogue + workflows SEN) | FAIT | `plugin/agent/prompts.py` |
+| S25-T4 | Tests unitaires (outil, builders, schémas, prompt) | FAIT | `tests/test_senegal_integration.py` (7), `tests/test_workflows.py` (+3) |
+| S25-T5 | Corpus golden étendu (3 cas SEN) | FAIT | `tests/golden/corpus.json` (33 cas) |
+| S25-T6 | Smoke QGIS SEN + mise à jour comptes d'outils | FAIT | `tests/senegal_integration_smoke.py` (8/8), `tools_smoke.py` (17/17), `bridge_http_smoke.py` |
+| S25-T7 | Documentation (README, guide utilisateur, architecture) | FAIT | `README.md`, `docs/guide_utilisateur.md`, `docs/architecture.md` |
 
-**Bilan des tests S15 :** 126 pytest verts ; smokes QGIS : clarification 3/3, execution_control 5/5, chat 4/4, conversation 4/4, recovery 3/3, artifacts 11/11, bridge 10/10, tools 16/16, workflows 8/8, e2e 7/7, plugin 6/6 — tous verts.
+**Bilan des tests S25 :** 171 pytest verts ; smokes QGIS : senegal_integration 8/8, tools 17/17, workflows 8/8 — tous verts.
+
+**Décision de mapping :** `sen_route_commune` utilise `buffer`(5 km)+`clip` (et non `distance_analysis`) car `qgis:distancematrix` n'accepte que des couches de points ; la sémantique « distance euclidienne » (RT5) est conservée via le tampon.
 
 ---
 
@@ -287,6 +301,7 @@ smokes QGIS (16 + 10 + 8 + 6 + 4 + 7 checks) — tous verts.
 | 2026-10-09 | Mémoire de conversation **limitée à la session** (aucune persistance) ; reprise d'une étape échouée = **une seule** correction LLM proposée puis confirmée par l'utilisateur (pas de boucle automatique) ; `recoverable` ne concerne que les erreurs `transient`/`unknown` | V2/S13, `plugin/agent/conversation.py`, `plugin/agent/orchestrator.py`, `plugin/agent/agent.py`, `plugin/ui/chat_panel.py` |
 | 2026-10-09 | Contrôle d'exécution : progression notifiée par callbacks (`on_step_start`/`on_step_finished`) ; annulation **coopérative** (`should_cancel` vérifié entre étapes et avant chaque tentative), jamais au milieu d'une étape Processing ; `ExecutionReport.cancelled` distingue l'annulation de l'échec | V2/S14, `plugin/agent/orchestrator.py`, `plugin/ui/chat_panel.py` |
 | 2026-10-09 | Questions de clarification : pseudo-outil `request_clarification` **optionnel** (absent de `TOOL_NAMES`/MCP) ; l'agent renvoie `AgentPlan.clarification` (sans étape) au lieu de deviner ; la réponse utilisateur est mémorisée comme tour de conversation puis le plan est produit | V2/S15, `plugin/agent/tools_schema.py`, `plugin/agent/agent.py`, `plugin/agent/prompts.py`, `plugin/ui/chat_panel.py` |
+| 2026-10-17 | Intégration du socle Sénégal : outil pur `find_senegal_sources` (17ᵉ outil, catalogue = métadonnées) ; workflows SEN exécutables `sen_route_commune` (tampon 5 km + clip, `qgis:distancematrix` étant limité aux points) et `sen_hydro_proximite` (tampon 2 km + clip) ; enregistrement dans `WORKFLOWS`, prompt système enrichi | V6/S25, `plugin/geofunc/tools_senegal.py`, `plugin/geofunc/catalog.py`, `mcp/server.py`, `plugin/workflows/senegal.py`, `plugin/workflows/definitions.py`, `plugin/agent/prompts.py` |
 
 ---
 
@@ -332,3 +347,4 @@ smokes QGIS (16 + 10 + 8 + 6 + 4 + 7 checks) — tous verts.
 | 2026-10-09 | S22 terminé : V5 GeoAI Sénégal — catalogue + workflows SEN + tests ; 159 tests verts ; V5 à compléter/avancer | `plugin/senegal_catalog.py`, `plugin/senegal_workflows.py`, `plugin/data/senegal_sources.json`, `tests/test_senegal_catalog.py`, `tests/test_senegal_workflows.py` |
 | 2026-10-09 | S23 terminé : V5 avancée — helper catalogue SEN + workflow extra SEN ; 161 tests verts ; V5 enrichi | `plugin/senegal_helpers.py`, `plugin/senegal_workflows_extra.py`, `tests/test_senegal_helpers.py`, `tests/test_senegal_workflows_extra.py` |
 | 2026-10-09 | S24 terminé : V5 finalisation — consolidation exports SEN (plugin/senegal.py) ; 161 tests verts ; V5 clôturé, passage V6 | `plugin/senegal.py` |
+| 2026-10-17 | S25 terminé (V6 démarré) : intégration du socle Sénégal de bout en bout — outil `find_senegal_sources` (MCP + tool calling), workflows SEN exécutables (`sen_route_commune`, `sen_hydro_proximite`) enregistrés dans le registre, prompt enrichi, corpus golden (33 cas), docs ; tests (171 pytest + smokes senegal 8/8, tools 17/17, workflows 8/8) | `plugin/geofunc/tools_senegal.py`, `plugin/geofunc/catalog.py`, `mcp/server.py`, `plugin/workflows/senegal.py`, `plugin/workflows/definitions.py`, `plugin/workflows/__init__.py`, `plugin/agent/prompts.py`, `tests/test_senegal_integration.py`, `tests/test_workflows.py`, `tests/test_mcp.py`, `tests/test_agent_llm.py`, `tests/test_clarification.py`, `tests/golden/corpus.json`, `tests/senegal_integration_smoke.py`, `tests/tools_smoke.py`, `tests/bridge_http_smoke.py`, `README.md`, `docs/guide_utilisateur.md`, `docs/architecture.md` |

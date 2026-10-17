@@ -18,14 +18,14 @@ def test_initialize():
     assert "tools" in resp["result"]["capabilities"]
 
 
-def test_tools_list_has_16_tools():
+def test_tools_list_has_17_tools():
     srv = MCPServer(client=_FakeClient({}))
     resp = srv.handle({"jsonrpc": "2.0", "id": 2, "method": "tools/list"})
     tools = resp["result"]["tools"]
-    assert len(tools) == 16
+    assert len(tools) == 17
     names = {t["name"] for t in tools}
-    assert {"buffer", "clip", "get_project_info", "export_map"} <= names
-    assert len(_tool_defs()) == 16
+    assert {"buffer", "clip", "get_project_info", "export_map", "find_senegal_sources"} <= names
+    assert len(_tool_defs()) == 17
 
 
 def test_tools_call_success():

@@ -35,6 +35,7 @@ TOOL_SCHEMAS: dict[str, dict[str, Any]] = {
     "distance_analysis": {"description": "Matrice de distances euclidiennes", "properties": {"from": {"type": "string"}, "to": {"type": "string"}, "output": {"type": "string", "description": "Nom logique ou chemin de sortie"}}, "required": ["from", "to"]},
     "save_layer": {"description": "Enregistre une couche", "properties": {"layer": {"type": "string"}, "path": {"type": "string"}}, "required": ["layer", "path"]},
     "export_map": {"description": "Exporte la carte en PNG", "properties": {"output": {"type": "string"}}},
+    "find_senegal_sources": {"description": "Catalogue de sources géospatiales pour le Sénégal (communes, réseau routier, hydrographie) : métadonnées, mots-clés et CRS suggéré (EPSG:32628). Le catalogue décrit des sources recommandées — les couches doivent être chargées par l'utilisateur.", "properties": {"query": {"type": "string", "description": "Mot-clé de recherche (ex. 'route', 'commune', 'hydro') ; optionnel (sans query, toutes les sources sont listées)"}}, },
 }
 
 
